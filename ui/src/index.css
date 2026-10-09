@@ -5,18 +5,18 @@
   --primary-hover: #7ab4ff;
   --primary-focus: #3d8af0;
 
-  --ink: #f7f8f8;
-  --ink-muted: #d0d6e0;
-  --ink-subtle: #8a8f98;
-  --ink-tertiary: #62666d;
+  --ink: #f4f6f2;
+  --ink-muted: #cfd8cd;
+  --ink-subtle: #8c968b;
+  --ink-tertiary: #626c62;
 
-  --canvas: #0b0c0d;
-  --surface-1: #0f1011;
-  --surface-2: #141516;
-  --surface-3: #18191a;
+  --canvas: #0a0c0a;
+  --surface-1: #101310;
+  --surface-2: #151915;
+  --surface-3: #1a1f1a;
   --surface-4: #191a1b;
-  --hairline: #23252a;
-  --hairline-strong: #34343a;
+  --hairline: #232a24;
+  --hairline-strong: #343d35;
   --hairline-tertiary: #3e3e44;
 
   --success: #27a644;

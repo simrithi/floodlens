@@ -88,7 +88,7 @@ function setupLayers(map: MlMap) {
   // Slightly lift the road network so the city reads as grey on black.
   for (const layer of map.getStyle().layers) {
     if (layer.type === 'line' && /^road_(pri|sec|trunk|mot)_fill/.test(layer.id)) {
-      map.setPaintProperty(layer.id, 'line-color', '#3b3e45')
+      map.setPaintProperty(layer.id, 'line-color', '#3b413c')
     }
   }
 
@@ -138,7 +138,7 @@ function setupLayers(map: MlMap) {
       type: 'line',
       source: 'route',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-width': 2, 'line-color': '#f7f8f8', 'line-opacity': 0, 'line-dasharray': [0, 4, 3], 'line-opacity-transition': { duration: 600 } },
+      paint: { 'line-width': 2, 'line-color': '#f4f6f2', 'line-opacity': 0, 'line-dasharray': [0, 4, 3], 'line-opacity-transition': { duration: 600 } },
     },
     firstSymbol,
   )
@@ -156,7 +156,7 @@ function setupLayers(map: MlMap) {
       type: 'line',
       source: 'scan',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#f7f8f8', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 4, 16, 12], 'line-opacity': 0.9 },
+      paint: { 'line-color': '#f4f6f2', 'line-width': ['interpolate', ['linear'], ['zoom'], 12, 4, 16, 12], 'line-opacity': 0.9 },
     },
     firstSymbol,
   )
@@ -190,7 +190,7 @@ function setupLayers(map: MlMap) {
       paint: {
         'circle-color': '#4c9aff',
         'circle-radius': ['interpolate', ['linear'], ['get', 'areaM2'], 0.4, 3, 6, 8],
-        'circle-stroke-color': '#0f1011',
+        'circle-stroke-color': '#101310',
         'circle-stroke-width': 1.5,
         'circle-opacity': 0.9,
       },
@@ -207,7 +207,7 @@ function setupLayers(map: MlMap) {
       minzoom: 12.5,
       filter: ['!=', ['get', 'hide_3d'], true],
       paint: {
-        'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 8], 0, '#1b1c20', 25, '#2e3036', 60, '#4a4c53', 140, '#7c7e86'],
+        'fill-extrusion-color': ['interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 8], 0, '#1b1e1b', 25, '#2e332e', 60, '#4a504a', 140, '#7c837c'],
         'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 12.5, 0, 13.5, ['coalesce', ['get', 'render_height'], 8]],
         'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
         'fill-extrusion-opacity': 0.92,

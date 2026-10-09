@@ -29,8 +29,8 @@ export function ElevationProfile({ rain, selectedId, onSelect }: { rain: number;
     <svg className="profile" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Elevation along the route with predicted water level">
       <defs>
         <linearGradient id="ground-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2a2c31" />
-          <stop offset="100%" stopColor="#141516" />
+          <stop offset="0%" stopColor="#2a2e2a" />
+          <stop offset="100%" stopColor="#141714" />
         </linearGradient>
         <linearGradient id="water-fill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#4c9aff" stopOpacity="0.75" />
@@ -47,11 +47,11 @@ export function ElevationProfile({ rain, selectedId, onSelect }: { rain: number;
         transition={reduced ? { duration: 0 } : { type: 'spring', stiffness: 80, damping: 18 }}
       />
       <path d={ground} fill="url(#ground-fill)" />
-      <path d={line} fill="none" stroke="#8a8f98" strokeWidth={1.5} />
+      <path d={line} fill="none" stroke="#8c968b" strokeWidth={1.5} />
       {ROUTE_HOTSPOTS.map(({ hotspot, at }) => (
         <g key={hotspot.id} className="profile-pin" onClick={() => onSelect(hotspot.id)}>
           <line x1={x(at)} x2={x(at)} y1={y(elevationAt(at)) + 4} y2={H - PAD.bottom + 4} stroke={riskColor(hotspot.score)} strokeOpacity={0.5} strokeDasharray="2 3" />
-          <circle cx={x(at)} cy={y(elevationAt(at))} r={hotspot.id === selectedId ? 5.5 : 4} fill={riskColor(hotspot.score)} stroke="#0f1011" strokeWidth={2} />
+          <circle cx={x(at)} cy={y(elevationAt(at))} r={hotspot.id === selectedId ? 5.5 : 4} fill={riskColor(hotspot.score)} stroke="#101310" strokeWidth={2} />
         </g>
       ))}
       <text x={0} y={H - 3} className="profile-axis">0 km</text>
