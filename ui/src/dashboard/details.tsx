@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import {
   ArrowDown,
@@ -57,6 +58,24 @@ function Metric({ icon, label, value }: { icon: ReactNode; label: string; value:
   )
 }
 
+function TabBar({ tabs, active, onChange }: { tabs: { id: string; label: string }[]; active: string; onChange: (id: string) => void }) {
+  return (
+    <div className="detail-tabs" role="tablist">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          role="tab"
+          aria-selected={t.id === active}
+          className={'detail-tab' + (t.id === active ? ' is-active' : '')}
+          onClick={() => onChange(t.id)}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function StreetViewButton({ onOpen, reason }: { onOpen: (() => void) | null; reason: string }) {
   return (
     <button className={'btn street-btn' + (onOpen ? ' btn-primary' : '')} disabled={!onOpen} title={onOpen ? undefined : reason} onClick={onOpen ?? undefined}>
@@ -72,6 +91,7 @@ export function HotspotDetail({ hotspot }: { hotspot: Hotspot }) {
   const { rain, analysis, setStreetView } = useAppState()
   const level = waterLevel(hotspot, rain)
   const frame = analysis ? nearestFrame(analysis, hotspot.lngLat) : null
+  const [tab, setTab] = useState<'factors' | 'history' | 'reasons'>('factors')
 
   return (
     <>
@@ -115,34 +135,52 @@ export function HotspotDetail({ hotspot }: { hotspot: Hotspot }) {
         </div>
       </div>
 
-      <div className="metrics">
-        <Metric icon={<Mountains size={16} />} label="Elevation" value={`${hotspot.elevation.toFixed(1)} m`} />
-        <Metric icon={<ArrowDown size={16} />} label="Below surroundings" value={`${Math.abs(hotspot.relative).toFixed(1)} m`} />
-        <Metric icon={<Ruler size={16} />} label="Road below kerb" value={`${hotspot.kerbDrop} cm`} />
-        <Metric icon={<Drop size={16} />} label="Potholes" value={`${hotspot.potholes}`} />
-        <Metric icon={<Pipe size={16} />} label="Drainage" value={hotspot.drainage} />
-        <Metric icon={<CloudRain size={16} />} label="Rain now" value={`${rain} mm/hr`} />
-      </div>
-
       <div>
-        <span className="label">Flooded in past monsoons</span>
-        <div className="history">
-          {HISTORY_YEARS.map((year, i) => (
-            <span key={year} className={'history-cell' + (hotspot.history[i] ? ' is-flooded' : '')}>
-              <span className="history-bar" />
-              {year}
-            </span>
-          ))}
-        </div>
-      </div>
+        <TabBar
+          tabs={[
+            { id: 'factors', label: 'Risk factors' },
+            { id: 'history', label: 'History' },
+            { id: 'reasons', label: 'Why this spot' },
+          ]}
+          active={tab}
+          onChange={(id) => setTab(id as typeof tab)}
+        />
 
-      <div>
-        <span className="label">Why this spot</span>
-        <ul className="reasons">
-          {hotspot.reasons.map((r) => (
-            <li key={r}>{r}</li>
-          ))}
-        </ul>
+        {tab === 'factors' && (
+          <div className="metrics tab-panel">
+            <Metric icon={<Mountains size={16} />} label="Elevation" value={`${hotspot.elevation.toFixed(1)} m`} />
+            <Metric icon={<ArrowDown size={16} />} label="Below surroundings" value={`${Math.abs(hotspot.relative).toFixed(1)} m`} />
+            <Metric icon={<Ruler size={16} />} label="Road below kerb" value={`${hotspot.kerbDrop} cm`} />
+            <Metric icon={<Drop size={16} />} label="Potholes" value={`${hotspot.potholes}`} />
+            <Metric icon={<Pipe size={16} />} label="Drainage" value={hotspot.drainage} />
+            <Metric icon={<CloudRain size={16} />} label="Rain now" value={`${rain} mm/hr`} />
+          </div>
+        )}
+
+        {tab === 'history' && (
+          <div className="tab-panel">
+            <span className="label">Flooded in past monsoons</span>
+            <div className="history">
+              {HISTORY_YEARS.map((year, i) => (
+                <span key={year} className={'history-cell' + (hotspot.history[i] ? ' is-flooded' : '')}>
+                  <span className="history-bar" />
+                  {year}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tab === 'reasons' && (
+          <div className="tab-panel">
+            <span className="label">Why this spot</span>
+            <ul className="reasons">
+              {hotspot.reasons.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <StreetViewButton
@@ -160,6 +198,7 @@ export function CellDetail({ cell }: { cell: CellRecord }) {
   const frame = bestFrame(analysis, cell)
   const open = () => setStreetView({ segment: frame.segment, index: frame.index })
   const shot = new Date(frame.shotDate.replace(' ', 'T'))
+  const [tab, setTab] = useState<'factors' | 'measurements'>('factors')
 
   return (
     <>
@@ -183,37 +222,50 @@ export function CellDetail({ cell }: { cell: CellRecord }) {
       <ScoreRing score={cell.risk} label={riskLabel(cell.risk)} sub="Risk from dashcam, terrain and rain" />
 
       <div>
-        <span className="label">What drives the score</span>
-        <ul className="factors">
-          {(Object.keys(cell.factors) as (keyof Factors)[]).map((k) => (
-            <li key={k}>
-              <span className="factor-name">{FACTOR_LABELS[k]}</span>
-              <span className="factor-bar">
-                <motion.span
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: cell.factors[k] }}
-                  transition={{ type: 'spring', stiffness: 90, damping: 20 }}
-                />
-              </span>
-              <span className="factor-value mono">{Math.round(cell.factors[k] * 100)}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+        <TabBar
+          tabs={[
+            { id: 'factors', label: 'What drives the score' },
+            { id: 'measurements', label: 'Measurements' },
+          ]}
+          active={tab}
+          onChange={(id) => setTab(id as typeof tab)}
+        />
 
-      <div className="metrics">
-        <Metric icon={<Waves size={16} />} label="Deepest dip" value={cell.maxDipCm ? `${cell.maxDipCm.toFixed(1)} cm` : 'None'} />
-        <Metric icon={<Path size={16} />} label="Dip area / frame" value={`${cell.dipAreaM2.toFixed(1)} m²`} />
-        <Metric icon={<Ruler size={16} />} label="Road below kerb" value={cell.kerbDropCm !== null ? `${cell.kerbDropCm.toFixed(1)} cm` : 'Not seen'} />
-        <Metric icon={<Drop size={16} />} label="Potholes" value={`${cell.potholes}`} />
-        <Metric icon={<Mountains size={16} />} label="Elevation" value={`${cell.demElevationM.toFixed(1)} m`} />
-        <Metric icon={<ArrowDown size={16} />} label="Vs. 400 m around" value={`${cell.demRelativeM > 0 ? '+' : ''}${cell.demRelativeM.toFixed(1)} m`} />
-      </div>
+        {tab === 'factors' && (
+          <ul className="factors tab-panel">
+            {(Object.keys(cell.factors) as (keyof Factors)[]).map((k) => (
+              <li key={k}>
+                <span className="factor-name">{FACTOR_LABELS[k]}</span>
+                <span className="factor-bar">
+                  <motion.span
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: cell.factors[k] }}
+                    transition={{ type: 'spring', stiffness: 90, damping: 20 }}
+                  />
+                </span>
+                <span className="factor-value mono">{Math.round(cell.factors[k] * 100)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
 
-      <p className="fine-print">
-        Recorded {shot.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. Depths are single-camera
-        estimates; kerb heights read low.
-      </p>
+        {tab === 'measurements' && (
+          <div className="tab-panel">
+            <div className="metrics">
+              <Metric icon={<Waves size={16} />} label="Deepest dip" value={cell.maxDipCm ? `${cell.maxDipCm.toFixed(1)} cm` : 'None'} />
+              <Metric icon={<Path size={16} />} label="Dip area / frame" value={`${cell.dipAreaM2.toFixed(1)} m²`} />
+              <Metric icon={<Ruler size={16} />} label="Road below kerb" value={cell.kerbDropCm !== null ? `${cell.kerbDropCm.toFixed(1)} cm` : 'Not seen'} />
+              <Metric icon={<Drop size={16} />} label="Potholes" value={`${cell.potholes}`} />
+              <Metric icon={<Mountains size={16} />} label="Elevation" value={`${cell.demElevationM.toFixed(1)} m`} />
+              <Metric icon={<ArrowDown size={16} />} label="Vs. 400 m around" value={`${cell.demRelativeM > 0 ? '+' : ''}${cell.demRelativeM.toFixed(1)} m`} />
+            </div>
+            <p className="fine-print">
+              Recorded {shot.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. Depths are
+              single-camera estimates; kerb heights read low.
+            </p>
+          </div>
+        )}
+      </div>
 
       <StreetViewButton onOpen={open} reason="" />
     </>

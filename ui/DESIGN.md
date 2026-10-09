@@ -12,7 +12,7 @@ colors:
   ink-muted: "#d0d6e0"
   ink-subtle: "#8a8f98"
   ink-tertiary: "#62666d"
-  canvas: "#010102"
+  canvas: "#0b0c0d"
   surface-1: "#0f1011"
   surface-2: "#141516"
   surface-3: "#18191a"

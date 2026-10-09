@@ -669,6 +669,36 @@
   font-size: 12px;
   font-weight: 500;
 }
+.detail-tabs {
+  display: flex;
+  gap: 18px;
+  border-bottom: 1px solid var(--hairline);
+}
+.detail-tab {
+  padding: 0 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-subtle);
+  cursor: pointer;
+  transition: color 150ms ease-out, border-color 150ms ease-out;
+}
+.detail-tab:hover {
+  color: var(--ink-muted);
+}
+.detail-tab.is-active {
+  font-weight: 500;
+  color: var(--ink);
+  border-bottom-color: var(--primary);
+}
+.tab-panel {
+  margin-top: 16px;
+}
+.tab-panel .fine-print {
+  margin-top: 14px;
+}
 .factors {
   list-style: none;
   margin: 8px 0 0;
