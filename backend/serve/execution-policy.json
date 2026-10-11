@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadRawFootage",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::floodlens-raw-563469689377/*"
+    },
+    {
+      "Sid": "ReadWriteOutputs",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::floodlens-outputs-563469689377/*"
+    },
+    {
+      "Sid": "ListOutputsBucket",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": "arn:aws:s3:::floodlens-outputs-563469689377"
+    },
+    {
+      "Sid": "Logs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:us-east-1:563469689377:log-group:/aws/sagemaker/*"
+    },
+    {
+      "Sid": "EcrPull",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetAuthorizationToken"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

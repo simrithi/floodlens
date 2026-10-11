@@ -1,0 +1,11 @@
+{
+  "EndpointConfigName": "floodlens-analyze-config",
+  "ProductionVariants": [
+    {
+      "VariantName": "primary",
+      "ModelName": "floodlens-analyze",
+      "InitialInstanceCount": 1,
+      "InstanceType": "ml.g4dn.xlarge"
+    }
+  ]
+}

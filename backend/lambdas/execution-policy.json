@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "Logs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:us-east-1:563469689377:*"
+    },
+    {
+      "Sid": "PresignRawUploads",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::floodlens-raw-563469689377/*"
+    },
+    {
+      "Sid": "WriteOutputs",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Resource": "arn:aws:s3:::floodlens-outputs-563469689377/*"
+    },
+    {
+      "Sid": "RunsTable",
+      "Effect": "Allow",
+      "Action": ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"],
+      "Resource": "arn:aws:dynamodb:us-east-1:563469689377:table/floodlens-runs"
+    }
+  ]
+}

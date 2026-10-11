@@ -1,0 +1,29 @@
+# FloodLens pipeline dependencies (Python 3.12)
+#
+# Install (see docs/APPLICATION.md, "Setup"):
+#   uv pip install -r requirements.txt
+#   uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130 --reinstall-package torch --reinstall-package torchvision
+# The second line swaps in the CUDA 13.0 PyTorch build, needed for RTX 50-series (Blackwell, sm_120) GPUs.
+# PyPI only ships the CPU build on Windows. Skip that line on machines without an NVIDIA GPU.
+# Exact versions used in development: requirements.lock.txt
+
+# Deep learning runtime
+torch>=2.7
+torchvision>=0.22
+
+# Models
+ultralytics>=8.3        # YOLO pothole segmentation
+transformers>=4.45      # SegFormer (road/sidewalk) and Depth Anything V2
+huggingface_hub>=0.25   # model weight downloads
+
+# Imaging and numerics
+numpy>=1.26
+pillow>=10.4
+opencv-python-headless>=4.10
+
+# Geo data
+rasterio>=1.4           # Copernicus DEM (GeoTIFF) sampling
+requests>=2.32          # Open-Meteo rainfall history, KartaView API
+
+# Utilities
+tqdm>=4.66
