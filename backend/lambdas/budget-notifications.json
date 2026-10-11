@@ -1,0 +1,14 @@
+[
+  {
+    "Notification": { "NotificationType": "ACTUAL", "ComparisonOperator": "GREATER_THAN", "Threshold": 50, "ThresholdType": "PERCENTAGE" },
+    "Subscribers": [{ "SubscriptionType": "EMAIL", "Address": "ssimrithi1@gmail.com" }]
+  },
+  {
+    "Notification": { "NotificationType": "ACTUAL", "ComparisonOperator": "GREATER_THAN", "Threshold": 80, "ThresholdType": "PERCENTAGE" },
+    "Subscribers": [{ "SubscriptionType": "EMAIL", "Address": "ssimrithi1@gmail.com" }]
+  },
+  {
+    "Notification": { "NotificationType": "ACTUAL", "ComparisonOperator": "GREATER_THAN", "Threshold": 100, "ThresholdType": "PERCENTAGE" },
+    "Subscribers": [{ "SubscriptionType": "EMAIL", "Address": "ssimrithi1@gmail.com" }]
+  }
+]

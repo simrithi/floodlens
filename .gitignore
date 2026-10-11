@@ -1,6 +1,14 @@
 # Pipeline data: footage, rasters, generated outputs (regenerate locally, don't commit)
 /data/
 
+# Lambda deploy artifacts: zips and vendored pip packages (rebuild from handler.py + requirements.txt)
+backend/lambdas/*.zip
+backend/lambdas/forecast/*
+!backend/lambdas/forecast/handler.py
+
+# One-off Step Functions replay payload (scratch, not project data)
+backend/lambdas/delhi-run-input.json
+
 # Dependencies
 node_modules
 

@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InvokeLambdas",
+      "Effect": "Allow",
+      "Action": ["lambda:InvokeFunction"],
+      "Resource": [
+        "arn:aws:lambda:us-east-1:563469689377:function:floodlens-invoke-frame",
+        "arn:aws:lambda:us-east-1:563469689377:function:floodlens-assemble-results"
+      ]
+    },
+    {
+      "Sid": "MarkFailed",
+      "Effect": "Allow",
+      "Action": ["dynamodb:UpdateItem"],
+      "Resource": "arn:aws:dynamodb:us-east-1:563469689377:table/floodlens-runs"
+    }
+  ]
+}

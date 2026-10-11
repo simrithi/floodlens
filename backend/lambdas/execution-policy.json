@@ -24,6 +24,51 @@
       "Effect": "Allow",
       "Action": ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"],
       "Resource": "arn:aws:dynamodb:us-east-1:563469689377:table/floodlens-runs"
+    },
+    {
+      "Sid": "ReadRawForFrames",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::floodlens-raw-563469689377/*"
+    },
+    {
+      "Sid": "InvokeSageMaker",
+      "Effect": "Allow",
+      "Action": ["sagemaker:InvokeEndpoint"],
+      "Resource": "arn:aws:sagemaker:us-east-1:563469689377:endpoint/floodlens-analyze"
+    },
+    {
+      "Sid": "StartPipeline",
+      "Effect": "Allow",
+      "Action": ["states:StartExecution"],
+      "Resource": "arn:aws:states:us-east-1:563469689377:stateMachine:floodlens-pipeline"
+    },
+    {
+      "Sid": "BedrockVisionAndText",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel"],
+      "Resource": [
+        "arn:aws:bedrock:us-east-1:563469689377:inference-profile/us.amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0"
+      ]
+    },
+    {
+      "Sid": "ActionsTable",
+      "Effect": "Allow",
+      "Action": ["dynamodb:PutItem", "dynamodb:Scan"],
+      "Resource": "arn:aws:dynamodb:us-east-1:563469689377:table/FloodLensActions"
+    },
+    {
+      "Sid": "OfficerPasscode",
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameter"],
+      "Resource": "arn:aws:ssm:us-east-1:563469689377:parameter/floodlens/officer-passcode"
+    },
+    {
+      "Sid": "PublishAlerts",
+      "Effect": "Allow",
+      "Action": ["sns:Publish"],
+      "Resource": "arn:aws:sns:us-east-1:563469689377:floodlens-alerts"
     }
   ]
 }
