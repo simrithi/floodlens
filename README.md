@@ -15,6 +15,7 @@ The engineering challenge is not simply to plot potential flood locations. It is
 - [Data and analytical pipeline](#data-and-analytical-pipeline)
 - [Frontend](#frontend)
 - [AWS architecture](#aws-architecture)
+- [Amazon SageMaker inference and terrain analysis](#amazon-sagemaker-inference-and-terrain-analysis)
 - [AI and event-driven capabilities](#ai-and-event-driven-capabilities)
 - [Data contracts and output layout](#data-contracts-and-output-layout)
 - [Local development](#local-development)
@@ -53,7 +54,7 @@ The pipeline and frontend have separate responsibilities:
 2. The **output layer** exposes structured JSON, GeoJSON, images, and depth-related files.
 3. The **frontend** requests the required artefacts over HTTP and renders them as maps, reports, and visual evidence.
 4. The **cloud delivery layer**, serves the built frontend and approved analysis artefacts through Amazon S3 and Amazon CloudFront.
-5. The serverless capabilities operate alongside the analytical pipeline while preserving the boundary between model estimates and verified observations.
+5. The serverless capabilities operate alongside the analytical pipeline while preserving the boundary between model estimates and verified observations. Amazon SageMaker provides a real-time inference endpoint for the project's deployed model and supports the model-inference workflow used alongside geospatial and terrain analysis.
 
 ## Architecture
 
@@ -150,6 +151,7 @@ The AWS architecture delivers the application and its analytical artefacts secur
 | AWS CDK v2 with TypeScript | Define and review infrastructure as code | Implemented as infrastructure as code in the infrastructure directory |
 | AWS Lambda | Serverless execution for visual checks, forecast analysis, and field-action APIs | Implemented |
 | Amazon Bedrock | Vision-based frame inspection and grounded officer briefs | Implemented |
+| Amazon SageMaker | Hosts the deployed model behind a real-time inference endpoint used for model predictions supporting geospatial and terrain analysis | Implemented |
 | Amazon EventBridge Scheduler | Invoke the rainfall-analysis workflow on a schedule | Implemented |
 | Amazon SNS | Send forecast notifications | Implemented |
 | Amazon DynamoDB | Store officer actions and field observations | Implemented |
@@ -214,6 +216,29 @@ The infrastructure design follows these principles:
 
 The default region for regional resources is `ap-south-1` (Mumbai). CloudFront is global. If a custom domain is configured for CloudFront, its ACM certificate must be provisioned in `us-east-1`.
 
+## Amazon SageMaker inference and terrain analysis
+
+Varshik uses **Amazon SageMaker** for model inference through a deployed **real-time endpoint**. This is a distinct part of the architecture from Amazon Bedrock: SageMaker serves the project's deployed predictive model, while Bedrock is used for foundation-model tasks such as visual evidence descriptions and grounded multilingual briefs.
+
+The SageMaker workflow supports inference associated with Varshik's geospatial and terrain-analysis process. The analytical pipeline prepares the relevant inputs, sends an inference request to the deployed endpoint, and uses the returned prediction as one input to the wider decision-support workflow. The result should remain traceable to its input features and model version where those details are available.
+
+### Inference flow
+
+1. **Prepare inputs:** the analysis workflow assembles the geospatial or terrain-derived features expected by the deployed model.
+2. **Invoke the endpoint:** the application or backend calls the SageMaker real-time endpoint using authorised AWS credentials and the expected request schema.
+3. **Validate the response:** check that the response is well-formed, contains the expected fields, and has valid numeric values before using it downstream.
+4. **Integrate the prediction:** combine the model output with the other relevant spatial findings and evidence; do not treat the prediction as a verified field measurement.
+5. **Monitor and evaluate:** track endpoint errors, latency, throttling, model version, and prediction quality against reliable field observations where available.
+
+| SageMaker component | Role in Varshik | Engineering consideration |
+|---|---|---|
+| Deployed model | Produces predictions from the features supplied by the geospatial/terrain workflow | Document the model type, feature schema, and version used in the actual deployment. |
+| Real-time inference endpoint | Serves online inference requests | Endpoint availability, latency, invocation permissions, and cost depend on the deployed configuration. |
+| Request/response contract | Defines how the backend sends features and consumes predictions | Validate inputs and outputs; handle timeouts, errors, and unexpected responses explicitly. |
+| Prediction integration | Makes model outputs available to the wider analysis and mapping workflow | Label predictions as model-derived estimates and retain their provenance. |
+
+The exact model algorithm, endpoint name, instance type, feature list, and prediction fields are intentionally not specified here because they should match the deployed SageMaker configuration rather than be guessed in documentation.
+
 ## AI and event-driven capabilities
 
 The following implemented workflows connect image-based evidence review, grounded reporting, scheduled rainfall analysis, notifications, and field feedback. The safeguards described here are part of the intended runtime behaviour; deployment-specific values should remain aligned with the active AWS configuration.
@@ -224,7 +249,7 @@ The following implemented workflows connect image-based evidence review, grounde
 
 ### 1. Amazon Bedrock for visual evidence inspection
 
-The frame-check workflow uses a Python 3.12 Lambda function to accept a city and spot identifier, retrieve the relevant findings and original dashcam frames from S3, and invoke a vision-capable Amazon Bedrock model through the Converse API.
+The frame-check workflow uses a Python 3.12 Lambda function to accept a city and spot identifier, retrieve the relevant findings and original dashcam frames from S3, and invoke a vision-capable Amazon Bedrock model through the Converse API. This is separate from the SageMaker real-time endpoint used for the project's predictive model inference.
 
 The model's scope is intentionally narrow: describe visible evidence rather than independently determine flood depth or replace the hydrological analysis.
 
@@ -502,7 +527,7 @@ The core delivery and event-driven workflows described in this README are implem
 3. **Identity and auditability:** replace shared-secret access with individual identities and role-based authorisation for operational use.
 4. **Forecast calibration:** validate city-specific rainfall conversions and depth curves against reliable historical or field data.
 5. **Observability:** refine dashboards, alarms, structured logs, and end-to-end service health checks.
-6. **AI evaluation:** maintain a reviewed image set and measure classification quality, uncertainty handling, and multilingual brief grounding.
+6. **AI/ML evaluation:** maintain a reviewed image set for Bedrock-assisted inspection; evaluate SageMaker prediction quality against reliable field observations; track model versions, latency, uncertainty, and failure cases.
 7. **Resilience and cost controls:** test retries, duplicate suppression, rate limits, cache invalidation, and budget alerts under failure conditions.
 
 ## Contributing
