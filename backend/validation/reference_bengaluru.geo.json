@@ -1,0 +1,44 @@
+{
+ "description": "Publicly reported waterlogging spots in Bengaluru near the ORR survey, from police reports quoted in news articles. Shown on the map for context only: three points are far too few for an accuracy score. Coordinates come from OpenStreetMap Nominatim and are approximate (about +-150 m). The Panathur railway bridge (reported 2023) is left out because it could not be located confidently.",
+ "sources": {
+  "tnm2023": {
+   "title": "Bengaluru experiences waterlogging again after several hours of rain (The News Minute, 13 Jun 2023; HAL Airport Traffic Police and Bengaluru City Police reports)",
+   "url": "https://www.thenewsminute.com/karnataka/bengaluru-experiences-waterlogging-again-after-several-hours-rain-178434",
+   "kind": "reported"
+  },
+  "tnm2022": {
+   "title": "Bengaluru's Outer Ring Road's broken infrastructure is why it floods (The News Minute, 3 Sep 2022)",
+   "url": "https://www.thenewsminute.com/article/bengaluru-s-outer-ring-road-s-broken-infrastructure-why-it-floods-167493",
+   "kind": "reported"
+  }
+ },
+ "hotspots": [
+  {
+   "id": "B01",
+   "name": "Kadubeesanahalli underpass",
+   "query": "Kadubeesanahalli underpass",
+   "sources": ["tnm2023"],
+   "lat": 12.939479,
+   "lng": 77.695359,
+   "geocoded": "Kadubeesanahalli Underpass, Outer Ring Road, Kaadubeesanahalli, Panathur"
+  },
+  {
+   "id": "B02",
+   "name": "HAL-Marathahalli underpass",
+   "query": "Marathahalli Underpass",
+   "sources": ["tnm2023"],
+   "lat": 12.957191,
+   "lng": 77.701236,
+   "geocoded": "Marathahalli Underpass (Outer Ring Road), Ananda Nagara. Matched by name; the report does not give a position"
+  },
+  {
+   "id": "B03",
+   "name": "ORR at RMZ Ecospace, Bellandur",
+   "query": "Ecospace bus stop, Outer Ring Road",
+   "sources": ["tnm2022"],
+   "lat": 12.928033,
+   "lng": 77.681171,
+   "geocoded": "Ecospace, Outer Ring Road, Devarabeesanahalli"
+  }
+ ]
+}

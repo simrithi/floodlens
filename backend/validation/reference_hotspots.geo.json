@@ -1,0 +1,442 @@
+{
+ "description": "Publicly reported waterlogging hotspots in Delhi, compiled from official announcements (PWD, Delhi Traffic Police) as quoted in news reports, plus locations reported waterlogged in specific storms. This is NOT the full official list (PWD identified 445 points for 2025, but the point-by-point list is not published). Coordinates are geocoded from the names with OpenStreetMap Nominatim and reviewed by hand; they are approximate (about +-150 m).",
+ "sources": {
+  "pwd2025": {
+   "title": "Officers deployed at 335 key spots to prevent waterlogging (PWD, 2025: seven perennial hotspots)",
+   "url": "https://www.tribuneindia.com/news/delhi/officers-deployed-at-335-key-spots-to-prevent-waterlogging",
+   "kind": "official"
+  },
+  "dtp2017": {
+   "title": "Delhi Traffic Police list of waterlogging-prone places sent to agencies (Hindustan Times, 27 Jun 2017)",
+   "url": "https://www.pressreader.com/india/hindustan-times-delhi/20170627/281633895247763",
+   "kind": "official"
+  },
+  "storm2025jul": {
+   "title": "Red alert as heavy rain batters Delhi, waterlogging and traffic snarls (Deccan Herald, July 2025)",
+   "url": "https://www.deccanherald.com/india/delhi/red-alert-issued-as-heavy-rain-batters-delhi-causes-waterlogging-and-traffic-snarls-3653592",
+   "kind": "reported"
+  },
+  "storm2024jun28": {
+   "title": "Heavy rain leaves Delhi waterlogged, traffic crawls (PTI via The Week, 28 Jun 2024)",
+   "url": "https://www.theweek.in/wire-updates/national/2024/06/28/des19-dl-rain-ld-traffic-jam.html",
+   "kind": "reported"
+  },
+  "reports_misc": {
+   "title": "Delhi waterlogging and traffic reports naming ITO, Pragati Maidan tunnel, Moti Bagh, Mathura Road, Vikas Marg, Ring Road near IP Flyover, Rohtak Road, Barapullah, Sarai Kale Khan (Deccan Herald, Tribune, Outlook)",
+   "url": "https://www.deccanherald.com/national/traffic-snarls-waterlogging-as-monsoon-hits-delhi-1122636.html",
+   "kind": "reported"
+  },
+  "underpasses": {
+   "title": "PWD underpass reports: Moolchand, Dhaula Kuan, Azadpur, Shakti Nagar, AIIMS, Zakhira (Daily Pioneer, The Patriot)",
+   "url": "https://thepatriot.in/delhi-ncr/new-drains-sumps-automated-pump-house-delhi-pwds-plan-to-tackle-waterlogging-at-seven-hotspots-70243",
+   "kind": "reported"
+  }
+ },
+ "hotspots": [
+  {
+   "id": "R01",
+   "name": "Minto Bridge underpass",
+   "query": "Minto Bridge, New Delhi",
+   "sources": [
+    "pwd2025",
+    "storm2025jul"
+   ],
+   "lat": 28.633452,
+   "lng": 77.226668,
+   "geocoded": "Shivaji Bridge, Babar Road, Kashmiri Market, Connaught Place, New Delhi, Delhi, 110001, India"
+  },
+  {
+   "id": "R02",
+   "name": "Pul Prahladpur underpass",
+   "query": "Pul Prahladpur, Delhi",
+   "sources": [
+    "pwd2025",
+    "underpasses"
+   ],
+   "lat": 28.499161,
+   "lng": 77.291437,
+   "geocoded": "elegantcasa, ,60 Feet Road, Pul Prahladpur, Surajkund Road, Surajkund, Central, New Delhi, Faridabad, South East Delhi, "
+  },
+  {
+   "id": "R03",
+   "name": "Ring Road opposite WHO building",
+   "query": "World Health Organization South-East Asia Regional Office, Delhi",
+   "sources": [
+    "pwd2025"
+   ],
+   "lat": 28.6297,
+   "lng": 77.2499,
+   "geocoded": "manual: approximate: Ring Road at Indraprastha Estate, WHO SEARO office"
+  },
+  {
+   "id": "R04",
+   "name": "Jahangirpuri Metro Station Road",
+   "query": "Jahangirpuri metro station, Delhi",
+   "sources": [
+    "pwd2025"
+   ],
+   "lat": 28.725646,
+   "lng": 77.163132,
+   "geocoded": "Jahangirpuri Metro Station, Ramgarh road, Jahangir Puri, Civil Lines, Delhi, North Delhi, Delhi, 110033, India"
+  },
+  {
+   "id": "R05",
+   "name": "Under Zakhira flyover",
+   "query": "Zakhira Flyover, Delhi",
+   "sources": [
+    "pwd2025",
+    "underpasses"
+   ],
+   "lat": 28.665489,
+   "lng": 77.173812,
+   "geocoded": "Zakhira Flyover, Anand Parbat, City & Sadar, Delhi, Old Delhi, Delhi, 110052, India"
+  },
+  {
+   "id": "R06",
+   "name": "Loni Road Golchakkar",
+   "query": "Loni Road, Shahdara",
+   "sources": [
+    "pwd2025"
+   ],
+   "lat": 28.691719,
+   "lng": 77.291842,
+   "geocoded": "Loni Road, Balbir Nagar Extension, Shahdara, Babarpur, Shahdara North, Delhi, North East Delhi, Delhi, 110093, India"
+  },
+  {
+   "id": "R07",
+   "name": "Karala-Kanjhawla stretch",
+   "query": "Karala, Delhi",
+   "sources": [
+    "pwd2025"
+   ],
+   "lat": 28.73514,
+   "lng": 77.032511,
+   "geocoded": "Karala, Narela, Delhi, Outer North Delhi, Delhi, India"
+  },
+  {
+   "id": "R08",
+   "name": "Azad Market Chowk, Rani Jhansi Road",
+   "query": "Azad Market, Delhi",
+   "sources": [
+    "dtp2017"
+   ],
+   "lat": 28.663309,
+   "lng": 77.20709,
+   "geocoded": "Azad Market, Rani Jhansi Road, Beri Wala Bagh, Sadar Bazar, Sarai Rohilla, City & Sadar, Delhi, Old Delhi, Delhi, 110055"
+  },
+  {
+   "id": "R09",
+   "name": "Defence Colony flyover",
+   "query": "Defence Colony, New Delhi",
+   "sources": [
+    "dtp2017"
+   ],
+   "lat": 28.5737,
+   "lng": 77.2276,
+   "geocoded": "manual: approximate: Defence Colony flyover, Lala Lajpat Rai Marg"
+  },
+  {
+   "id": "R10",
+   "name": "Laxmi Nagar Metro Station, Vikas Marg",
+   "query": "Laxmi Nagar metro station, Delhi",
+   "sources": [
+    "dtp2017",
+    "reports_misc"
+   ],
+   "lat": 28.630589,
+   "lng": 77.277502,
+   "geocoded": "Laxmi Nagar Metro Station, Vikas Marg, Shakarpur, Shahdara South, Delhi, East Delhi, Delhi, 110031, India"
+  },
+  {
+   "id": "R11",
+   "name": "Kamla Market roundabout",
+   "query": "Kamla Market, Delhi",
+   "sources": [
+    "dtp2017"
+   ],
+   "lat": 28.678668,
+   "lng": 77.207257,
+   "geocoded": "kamla market, Chhatori Lane, Jaipuria Mill, Kamla Nagar, Keshavpuram, Delhi, Central North Delhi, Delhi, 110007, India"
+  },
+  {
+   "id": "R12",
+   "name": "AIIMS underpass",
+   "query": "AIIMS flyover, New Delhi",
+   "sources": [
+    "dtp2017",
+    "underpasses"
+   ],
+   "lat": 28.569169,
+   "lng": 77.209263,
+   "geocoded": "AIIMS Flyover, Kidwai Nagar, New Delhi, Delhi, 110029, India"
+  },
+  {
+   "id": "R13",
+   "name": "Adhchini T-point",
+   "query": "Adchini, New Delhi",
+   "sources": [
+    "dtp2017"
+   ],
+   "lat": 28.536917,
+   "lng": 77.188132,
+   "geocoded": "Heinrich Böll Stiftung Regional Office New Delhi, C-20, Shaheed Jeet Singh Marg, Adchini, Lado Sarai, South, New Delhi, "
+  },
+  {
+   "id": "R14",
+   "name": "ITO crossing",
+   "query": "ITO, New Delhi",
+   "sources": [
+    "storm2025jul",
+    "reports_misc"
+   ],
+   "lat": 28.628191,
+   "lng": 77.241044,
+   "geocoded": "ITO, Bahadur Shah Zafar Marg, City & Sadar, New Delhi, Old Delhi, Delhi, 110002, India"
+  },
+  {
+   "id": "R15",
+   "name": "Minto Road",
+   "query": "Minto Road, New Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.638123,
+   "lng": 77.223628,
+   "geocoded": "Vivekanand Marg, City & Sadar, Delhi, Old Delhi, Delhi, 110001, India"
+  },
+  {
+   "id": "R16",
+   "name": "Dhaula Kuan flyover",
+   "query": "Dhaula Kuan, New Delhi",
+   "sources": [
+    "storm2024jun28",
+    "storm2025jul",
+    "underpasses"
+   ],
+   "lat": 28.591872,
+   "lng": 77.161716,
+   "geocoded": "Dhaula Kuan, NH48, Dhaula Kuan, Delhi Cantonment, New Delhi, Delhi, 110021, India"
+  },
+  {
+   "id": "R17",
+   "name": "Nehru Place",
+   "query": "Nehru Place Market, Kalkaji",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.5492,
+   "lng": 77.2519,
+   "geocoded": "manual: approximate: Nehru Place (Nominatim returned Motilal Nehru Place)"
+  },
+  {
+   "id": "R18",
+   "name": "Kailash Colony Road",
+   "query": "Kailash Colony, New Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.5553,
+   "lng": 77.2425,
+   "geocoded": "manual: approximate: Kailash Colony metro, Lala Lajpat Rai Marg"
+  },
+  {
+   "id": "R19",
+   "name": "Naraina",
+   "query": "Naraina Vihar, New Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.624833,
+   "lng": 77.143484,
+   "geocoded": "CGHS Dispensary Naraina Vihar, OP Bharti Marg, Naraina Vihar, Naraina, Karol Bagh, Delhi, New Delhi, Delhi, 110028, Indi"
+  },
+  {
+   "id": "R20",
+   "name": "Patel Nagar",
+   "query": "Patel Nagar metro station, Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.645586,
+   "lng": 77.168698,
+   "geocoded": "Patel Nagar Metro Station, Patel Road, East Patel Nagar, Patel Nagar, Karol Bagh, Delhi, Central Delhi, Delhi, 110008, I"
+  },
+  {
+   "id": "R21",
+   "name": "Vijay Chowk",
+   "query": "Vijay Chowk, New Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.615714,
+   "lng": 77.209072,
+   "geocoded": "Vijay Chowk, Rakab Ganj, Raisina Hill, New Delhi, Delhi, 110004, India"
+  },
+  {
+   "id": "R22",
+   "name": "Jangpura",
+   "query": "Jangpura, New Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.5843,
+   "lng": 77.238,
+   "geocoded": "manual: approximate: Jangpura metro"
+  },
+  {
+   "id": "R23",
+   "name": "RK Puram",
+   "query": "R K Puram, New Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.557961,
+   "lng": 77.183231,
+   "geocoded": "CGHS Dispensary R.K.Puram sec-2, Venkateshwara Marg, Sector 2, Ramakrishna Puram, South, Delhi, New Delhi, Delhi, 110022"
+  },
+  {
+   "id": "R24",
+   "name": "Lajpat Nagar",
+   "query": "Lajpat Nagar, New Delhi",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.572234,
+   "lng": 77.246595,
+   "geocoded": "Water Tower, Lajpat Nagar-I, Prachin Shiv Mandir Road, Lajpat Nagar I, Lajpat Nagar, Central, New Delhi, South East Delh"
+  },
+  {
+   "id": "R25",
+   "name": "Mehrauli-Gurgaon Road",
+   "query": "Qutub Minar Metro Station",
+   "sources": [
+    "storm2025jul"
+   ],
+   "lat": 28.514105,
+   "lng": 77.186174,
+   "geocoded": "Qutub Minar Metro Station, Anuvrat Marg, Lado Sarai, South, Delhi, South Delhi, Delhi, 110030, India"
+  },
+  {
+   "id": "R26",
+   "name": "Under Moti Bagh metro station",
+   "query": "Moti Bagh, New Delhi",
+   "sources": [
+    "reports_misc",
+    "storm2024jun28"
+   ],
+   "lat": 28.581836,
+   "lng": 77.176929,
+   "geocoded": "North Moti Bagh, New Delhi, Delhi, India"
+  },
+  {
+   "id": "R27",
+   "name": "Pragati Maidan tunnel",
+   "query": "Pragati Maidan, New Delhi",
+   "sources": [
+    "reports_misc"
+   ],
+   "lat": 28.617505,
+   "lng": 77.240155,
+   "geocoded": "Pragati Maidan (Gate No.5), Pragati Maidan Tunnel, New Delhi, Delhi, 110503, India"
+  },
+  {
+   "id": "R28",
+   "name": "Mathura Road near Pragati Maidan",
+   "query": "Supreme Court metro station, New Delhi",
+   "sources": [
+    "reports_misc"
+   ],
+   "lat": 28.623375,
+   "lng": 77.242615,
+   "geocoded": "Supreme Court Metro Station, ITO Skywalk, Central, Delhi, South East Delhi, Delhi, 110002, India"
+  },
+  {
+   "id": "R29",
+   "name": "Ring Road near IP Flyover",
+   "query": "Indraprastha Metro Station",
+   "sources": [
+    "reports_misc"
+   ],
+   "lat": 28.6235,
+   "lng": 77.2505,
+   "geocoded": "manual: approximate: Ring Road at IP flyover (Nominatim returned Nirman Vihar)"
+  },
+  {
+   "id": "R30",
+   "name": "Rohtak Road",
+   "query": "Punjabi Bagh, Delhi",
+   "sources": [
+    "reports_misc"
+   ],
+   "lat": 28.672995,
+   "lng": 77.146124,
+   "geocoded": "Punjabi Bagh, Rohtak Road, Rampura, Ashok Vihar, Keshavpuram, Delhi, Central North Delhi, Delhi, 110035, India"
+  },
+  {
+   "id": "R31",
+   "name": "Bhairon Marg",
+   "query": "Bhairon Road, New Delhi",
+   "sources": [
+    "reports_misc"
+   ],
+   "lat": 28.611,
+   "lng": 77.247,
+   "geocoded": "manual: approximate: Bhairon Marg near Ring Road"
+  },
+  {
+   "id": "R32",
+   "name": "Rajghat, Ring Road",
+   "query": "Raj Ghat, Delhi",
+   "sources": [
+    "reports_misc"
+   ],
+   "lat": 28.644154,
+   "lng": 77.249838,
+   "geocoded": "Raj Ghat, Central, Delhi, South East Delhi, Delhi, India"
+  },
+  {
+   "id": "R33",
+   "name": "Sarai Kale Khan",
+   "query": "Sarai Kale Khan",
+   "sources": [
+    "reports_misc"
+   ],
+   "lat": 28.589189,
+   "lng": 77.258065,
+   "geocoded": "Sarai Kale Khan, Mahatma Gandhi Marg, Central, Delhi, South East Delhi, Delhi, 110013, India"
+  },
+  {
+   "id": "R34",
+   "name": "Moolchand underpass",
+   "query": "Moolchand, New Delhi",
+   "sources": [
+    "underpasses"
+   ],
+   "lat": 28.566845,
+   "lng": 77.235568,
+   "geocoded": "Moolchand hospitals blood bank, Chhabra Marg, Lajpat Nagar III, Lajpat Nagar, Central, New Delhi, South Delhi, Delhi, 11"
+  },
+  {
+   "id": "R35",
+   "name": "Azadpur underpass",
+   "query": "Azadpur metro station, Delhi",
+   "sources": [
+    "underpasses"
+   ],
+   "lat": 28.707407,
+   "lng": 77.179784,
+   "geocoded": "Police Station Azadpur Metro, Mahatma Gandhi Marg, Ashok Vihar, Shalimar Bagh, Keshavpuram, Delhi, Central North Delhi, "
+  },
+  {
+   "id": "R36",
+   "name": "Shakti Nagar underpass",
+   "query": "Shakti Nagar, Delhi",
+   "sources": [
+    "underpasses"
+   ],
+   "lat": 28.679305,
+   "lng": 77.19448,
+   "geocoded": "Shakti Nagar, Keshavpuram, Delhi, Central North Delhi, Delhi, India"
+  }
+ ]
+}

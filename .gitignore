@@ -1,3 +1,6 @@
+# Pipeline data: footage, rasters, generated outputs (regenerate locally, don't commit)
+/data/
+
 # Dependencies
 node_modules
 

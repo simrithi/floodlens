@@ -1,13 +1,17 @@
 import { AnimatePresence, motion } from 'motion/react'
 import type { Variants } from 'motion/react'
-import { ArrowsDownUp, CloudRain, NavigationArrow, Path, UploadSimple, VideoCamera } from '@phosphor-icons/react'
+import { useState } from 'react'
+import { CloudRain, FilePdf, Path, PlayCircle, Sparkle, Target, Wrench } from '@phosphor-icons/react'
 import { Logo } from '../ui/Logo'
-import { AnimatedNumber } from '../ui/AnimatedNumber'
-import { ElevationProfile } from './ElevationProfile'
+import { SurveyPicker } from './SurveyPicker'
+import { Tour } from '../tour/Tour'
+import { PriorityList } from './spots'
+import { HowItWorks } from '../how/HowItWorks'
+import { WaterChart } from './WaterChart'
+import { LayerPanel } from './LayerPanel'
 import { CellDetail, HotspotDetail } from './details'
-import { RAIN_PRESETS, RISK_COLORS, riskColor, waterLevel } from '../data/hotspots'
-import { ROUTE_HOTSPOTS, ROUTE_LENGTH, ROUTE_NAME } from '../data/geo'
-import { RUNS, segmentLabel } from '../data/analysis'
+import { RAIN_PRESETS, RISK_COLORS } from '../data/hotspots'
+import { RUNS, filmedKm } from '../data/analysis'
 import { useAppState, useSelectedCell, useSelectedHotspot } from '../state'
 import './dashboard.css'
 
@@ -29,33 +33,44 @@ const panel = (dir: 'left' | 'right' | 'up' | 'down', order: number): Variants =
 }
 
 export function Dashboard({ onHome }: { onHome: () => void }) {
-  const { rain, setRain, selectedId, setSelectedId, analysis, analysisStatus, run, setRun } = useAppState()
+  const { rain, setRain, selectedId, setSelectedId, analysis, analysisStatus, survey, run, setRun, validation, setShowValidation, findings } = useAppState()
   const hotspot = useSelectedHotspot()
   const cell = useSelectedCell()
-  const routeMinutes = Math.round((ROUTE_LENGTH / 1000 / 28) * 60)
-  const measured = analysis ? [...analysis.cells].sort((a, b) => b.risk - a.risk).slice(0, 4) : []
+  // Walkthrough for the demo video; ?tour=1 starts it on load.
+  const [showHow, setShowHow] = useState(false)
+  const [touring, setTouring] = useState(() => new URLSearchParams(window.location.search).has('tour'))
 
   return (
     <motion.div className="dash" initial="hidden" animate="show" exit="exit">
       {/* Top bar */}
       <motion.header className="dash-top glass" variants={panel('up', 0)}>
         <Logo onClick={onHome} />
-        <div className="dash-route-chip">
-          <NavigationArrow size={14} weight="fill" />
-          <span>{ROUTE_NAME.from}</span>
-          <span className="muted">to</span>
-          <span>{ROUTE_NAME.to}</span>
-        </div>
+        <SurveyPicker />
+        <button className="how-btn" onClick={() => setShowHow(true)}>
+          <span className="how-dot" aria-hidden="true" />
+          <Sparkle size={15} weight="fill" />
+          How it works
+        </button>
         <div className="dash-top-right">
-          <span className="rain-readout">
-            <CloudRain size={16} />
-            <span className="mono">
-              <AnimatedNumber value={rain} /> mm/hr
-            </span>
-          </span>
-          <button className="btn btn-primary">
-            <UploadSimple size={16} weight="bold" />
-            Upload footage
+          <button className={'btn' + (touring ? ' is-open' : '')} onClick={() => setTouring((t) => !t)}>
+            <PlayCircle size={16} />
+            Walkthrough
+          </button>
+          <LayerPanel />
+          {validation && survey.validation && (
+            <button className="btn accuracy-btn" onClick={() => setShowValidation(true)}>
+              <Target size={16} />
+              Accuracy
+              <span className="mono accuracy-auc">AUC {validation.terrain.auc.toFixed(2)}</span>
+            </button>
+          )}
+          <button
+            className="btn btn-primary"
+            onClick={() => window.open(`/report/${survey.city}?print=1`, '_blank', 'noopener')}
+            title={`Findings report for ${survey.city === 'delhi' ? 'Delhi' : 'Bengaluru'} (opens the print dialog: choose Save as PDF)`}
+          >
+            <FilePdf size={16} weight="bold" />
+            Export PDF
           </button>
         </div>
       </motion.header>
@@ -63,105 +78,64 @@ export function Dashboard({ onHome }: { onHome: () => void }) {
       {/* Left: route */}
       <motion.aside className="dash-left glass" variants={panel('left', 1)}>
         <div className="section">
-          <h2 className="panel-title">
-            <Path size={18} /> Route risk
-          </h2>
-          <div className="route-stats">
-            <div>
-              <span className="big mono">{(ROUTE_LENGTH / 1000).toFixed(1)}</span>
-              <span className="unit">km</span>
-            </div>
-            <div>
-              <span className="big mono">{routeMinutes}</span>
-              <span className="unit">min</span>
-            </div>
-            <div>
-              <span className="big mono" style={{ color: RISK_COLORS[4] }}>
-                {ROUTE_HOTSPOTS.length}
-              </span>
-              <span className="unit">hotspots</span>
-            </div>
+          <div className="row-between">
+            <h2 className="panel-title">
+              <Path size={18} /> Survey
+            </h2>
+            {survey.runs.length > 1 && (
+              <div className="seg-toggle" role="group" aria-label="Dashcam analysis resolution">
+                {RUNS.filter((r) => survey.runs.includes(r.id)).map((r) => (
+                  <button key={r.id} className={run === r.id ? 'is-active' : ''} onClick={() => setRun(r.id)}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+          {analysis ? (
+            <div className="route-stats">
+              <div>
+                <span className="big mono">{filmedKm(analysis).toFixed(1)}</span>
+                <span className="unit">km filmed</span>
+              </div>
+              <div>
+                <span className="big mono">{analysis?.cells.length ?? 0}</span>
+                <span className="unit">stretches</span>
+              </div>
+              <div>
+                <span className="big mono" style={{ color: RISK_COLORS[3] }}>
+                  {findings?.spots.filter((x) => x.sequence === survey.sequence).length ?? 0}
+                </span>
+                <span className="unit">spots to fix</span>
+              </div>
+            </div>
+          ) : (
+            <p className="empty">No pipeline output for this survey yet.</p>
+          )}
         </div>
 
-        <div className="section">
-          <div className="row-between">
-            <span className="label">Elevation and water line</span>
-            <span className="label mono">
-              <AnimatedNumber value={Math.min(2.4, (rain / 100) * 1.7)} decimals={1} /> m
-            </span>
+        {analysis && (
+          <div className="section">
+            <span className="label">Predicted water on each measured stretch</span>
+            <WaterChart analysis={analysis} rain={rain} selectedId={selectedId} onSelect={setSelectedId} />
           </div>
-          <ElevationProfile rain={rain} selectedId={selectedId} onSelect={setSelectedId} />
-        </div>
+        )}
 
         <div className="section">
-          <div className="row-between">
-            <span className="label">
-              <VideoCamera size={14} /> Measured with dashcam
-            </span>
-            <div className="seg-toggle" role="group" aria-label="Dashcam analysis resolution">
-              {RUNS.map((r) => (
-                <button key={r.id} className={run === r.id ? 'is-active' : ''} onClick={() => setRun(r.id)}>
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          <span className="label">
+            <Wrench size={14} /> Where to act first
+          </span>
           {analysisStatus === 'missing' ? (
             <p className="empty">No pipeline output found. Run backend/run_local.py to measure real roads.</p>
-          ) : analysisStatus === 'loading' && !analysis ? (
+          ) : findings ? (
+            <PriorityList findings={findings} selectedId={selectedId} />
+          ) : (
             <ul className="route-list" aria-busy="true">
               {[0, 1, 2].map((i) => (
                 <li key={i} className="skeleton-row" />
               ))}
             </ul>
-          ) : (
-            <ul className="route-list">
-              {measured.map((c) => (
-                <li key={c.id}>
-                  <button className={'route-item' + (c.id === selectedId ? ' is-selected' : '')} onClick={() => setSelectedId(c.id)}>
-                    <span className="route-score mono" style={{ color: riskColor(c.risk) }}>
-                      {c.risk}
-                    </span>
-                    <span className="route-text">
-                      <span className="route-name">{segmentLabel(analysis!, c.segment)}</span>
-                      <span className="route-meta">
-                        {c.id}, {c.maxDipCm ? `dip ${c.maxDipCm.toFixed(0)} cm` : 'no dips'}, {c.demRelativeM.toFixed(1)} m vs. around
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
           )}
-        </div>
-
-        <div className="section">
-          <span className="label">Along this route (sample)</span>
-          <ul className="route-list">
-            {ROUTE_HOTSPOTS.map(({ hotspot: h, at }) => (
-              <li key={h.id}>
-                <button className={'route-item' + (h.id === selectedId ? ' is-selected' : '')} onClick={() => setSelectedId(h.id)}>
-                  <span className="route-score mono" style={{ color: riskColor(h.score) }}>
-                    {h.score}
-                  </span>
-                  <span className="route-text">
-                    <span className="route-name">{h.name}</span>
-                    <span className="route-meta">
-                      {(at / 1000).toFixed(1)} km in, {waterLevel(h, rain)} cm water
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="safer">
-          <ArrowsDownUp size={16} />
-          <span>
-            Safer route via Mathura Road avoids 2 hotspots, <b>+4 min</b>
-          </span>
         </div>
       </motion.aside>
 
@@ -206,6 +180,9 @@ export function Dashboard({ onHome }: { onHome: () => void }) {
         </div>
       </motion.footer>
 
+      {touring && <Tour onExit={() => setTouring(false)} />}
+      <AnimatePresence>{showHow && <HowItWorks onClose={() => setShowHow(false)} />}</AnimatePresence>
+
       <motion.div className="dash-legend glass" variants={panel('down', 4)}>
         <span className="legend-bar" style={{ background: `linear-gradient(90deg, ${RISK_COLORS.join(', ')})` }} />
         <span className="legend-labels">
@@ -215,6 +192,11 @@ export function Dashboard({ onHome }: { onHome: () => void }) {
         <span className="legend-note">
           <span className="legend-swatch measured" /> Measured
           <span className="legend-swatch sample" /> Sample
+          {validation && survey.validation && (
+            <>
+              <span className="legend-ring" /> Reported
+            </>
+          )}
         </span>
       </motion.div>
     </motion.div>

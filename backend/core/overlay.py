@@ -45,10 +45,11 @@ def render_overlay(image_rgb: np.ndarray, a: FrameAnalysis) -> np.ndarray:
         cv2.polylines(img, [p.polygon], True, POTHOLE, max(2, round(3 * scale / 0.55)), cv2.LINE_AA)
         _label(img, f"pothole {p.confidence:.0%}  {depth:.0f} cm", (p.bbox[0], p.bbox[1] - 10), POTHOLE, scale)
 
-    if a.kerb is not None and len(a.kerb.points) > 1:
-        cv2.polylines(img, [a.kerb.points.reshape(-1, 1, 2)], False, KERB, max(2, round(3 * scale / 0.55)), cv2.LINE_AA)
-        top = a.kerb.points[0]
-        _label(img, f"kerb {a.kerb.drop_cm:.0f} cm", (int(top[0]), int(top[1]) - 14), KERB, scale)
+    for kerb in a.kerbs:
+        if len(kerb.points) > 1:
+            cv2.polylines(img, [kerb.points.reshape(-1, 1, 2)], False, KERB, max(2, round(3 * scale / 0.55)), cv2.LINE_AA)
+            top = kerb.points[0]
+            _label(img, "kerb", (int(top[0]), int(top[1]) - 14), KERB, scale)
 
     return img
 

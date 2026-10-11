@@ -1,0 +1,78 @@
+/* Walkthrough captions (tour/Tour.tsx): a lower third above the rain simulator, above street view too. */
+.tour {
+  position: fixed;
+  left: 384px;
+  right: 408px;
+  bottom: 96px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.tour-card {
+  max-width: 720px;
+  padding: 14px 20px;
+  text-align: center;
+  pointer-events: auto;
+}
+.tour-caption {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.tour-detail {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-muted);
+  text-wrap: balance;
+}
+.tour-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: var(--r-pill);
+  pointer-events: auto;
+}
+.tour-controls button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.tour-controls button:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+.tour-count {
+  padding: 0 6px;
+  font-size: 11px;
+  color: var(--ink-subtle);
+}
+@media (max-width: 1024px) {
+  .tour {
+    left: 16px;
+  }
+}
+@media (max-width: 768px) {
+  .tour {
+    left: 8px;
+    right: 8px;
+    bottom: calc(50vh + 12px);
+  }
+  .tour-caption {
+    font-size: 15px;
+  }
+}

@@ -141,3 +141,56 @@
   border: 3px solid var(--ink);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 30%, transparent);
 }
+
+/* Hover label for reported hotspots (validation layer). */
+.ref-popup .maplibregl-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  color: var(--ink);
+  font: 500 12px/1.4 var(--font);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.5);
+}
+.ref-popup .maplibregl-popup-content span {
+  font-weight: 400;
+  color: var(--ink-subtle);
+}
+.ref-popup .maplibregl-popup-tip {
+  display: none;
+}
+
+/* Zoom / compass / tilt controls: dashboard only, beside the right panel. */
+[data-mode='landing'] .maplibregl-ctrl-top-right {
+  display: none;
+}
+.maplibregl-ctrl-top-right {
+  top: 92px;
+  right: 408px;
+}
+.maplibregl-ctrl-group {
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--r-md) !important;
+  background: color-mix(in srgb, var(--surface-1) 90%, transparent) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.6) !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--hairline) !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background: var(--surface-3) !important;
+}
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) opacity(0.85);
+}
+@media (max-width: 768px) {
+  .maplibregl-ctrl-top-right {
+    top: 140px;
+    right: 8px;
+  }
+}

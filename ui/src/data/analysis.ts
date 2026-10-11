@@ -11,8 +11,6 @@ export const RUNS: { id: Run; label: string }[] = [
   { id: 'full', label: '4K' },
 ]
 
-export const SEQUENCE_ID = 4020141
-
 export const ANALYSIS_BASE: string = import.meta.env.VITE_ANALYSIS_BASE ?? '/analysis'
 
 export type FrameRecord = {
@@ -29,11 +27,25 @@ export type FrameRecord = {
   ground: { horizonY: number; inliers: number; residualStd: number } | null
   potholes: { confidence: number; bbox: number[]; depthCm: number; areaM2: number; lat: number | null; lng: number | null }[]
   dips: { depthCm: number; areaM2: number; distanceM: number; lat: number | null; lng: number | null }[]
-  kerb: { dropCm: number; side: 'left' | 'right' } | null
+  /** Carriageway edges seen in this frame (one per side at most). Height is not reliable and not shown. */
+  kerbs: { side: 'left' | 'right'; beyond: string; dropCm: number | null; ground: [number, number][] }[]
   demElevationM: number
+  /** Depth (m) of the road sag this frame sits in, from the phone-sensor profile; null without a sensor log. */
+  sagM?: number | null
 }
 
-export type Factors = { terrain: number; surface: number; potholes: number; kerb: number; rain: number }
+export type Factors = { terrain: number; sag?: number; surface: number; potholes: number; drainage: number; rain: number }
+
+export type WaterPrediction = {
+  station: string
+  drainCapacityMmHr: number
+  catchmentM2: number
+  poolM2: number
+  inHollow: boolean
+  hollowDepthCm: number
+  designStorms: { returnPeriodYears: number; rainMmHr: number; depthCm: number }[]
+  curve: { rainMmHr: number[]; depthCm: number[] }
+}
 
 export type CellRecord = {
   id: string
@@ -47,8 +59,19 @@ export type CellRecord = {
   maxDipCm: number
   dipAreaM2: number
   kerbDropCm: number | null
+  kerbFrames: number
   demElevationM: number
   demRelativeM: number
+  dem: 'bare' | 'surface'
+  hollowDepthCm: number
+  /** Low point in the road measured by the phone's sensors (underpasses); null if none or no sensor log. */
+  roadSag?: { depthM: number; lengthM: number } | null
+  /** This stretch is a ramp: its runoff runs down into the phone-measured sag of another stretch. */
+  drainsTo?: { id: string; distanceM: number; ahead: boolean; depth2yCm: number; sagM: number } | null
+  catchmentM2: number
+  drain: { distanceM: number; class: string; name: string; covered: boolean }
+  water: WaterPrediction
+  depth2yCm: number
   factors: Factors
   risk: number
 }
@@ -56,6 +79,8 @@ export type CellRecord = {
 export type Analysis = {
   version: number
   generatedAt: string
+  /** Missing in outputs written before multi-city support (Delhi). */
+  city?: { key: string; name: string; drains: string }
   sequence: {
     id: number
     source: string
@@ -66,6 +91,7 @@ export type Analysis = {
   }
   input: { size: Run; workShape: [number, number]; device: string }
   rainfall: { maxHourlyMm: number; p99WetHourMm: number; note: string }
+  designStorms?: { source: string; stations: { name: string; intensityMmHr: Record<string, number> }[] }
   summary: {
     frames: number
     dips: number
@@ -78,26 +104,69 @@ export type Analysis = {
   frames: FrameRecord[]
 }
 
+/** Plain sentence for a ramp stretch, e.g. "Ramp into a low point 240 m ahead, about 20 cm expected there". */
+export function rampText(d: NonNullable<CellRecord['drainsTo']>) {
+  return `Ramp into a low point ${d.distanceM} m ${d.ahead ? 'ahead' : 'back'}, about ${Math.round(d.depth2yCm)} cm expected there`
+}
+
+/** A low-risk stretch that drains into a nearby low point is labelled as its ramp, not "Drains well". */
+export function isRamp(cell: CellRecord) {
+  return !!cell.drainsTo && cell.risk < cell.drainsTo.depth2yCm * (100 / 30)
+}
+
 export const FACTOR_LABELS: Record<keyof Factors, string> = {
-  terrain: 'Low ground (DEM)',
-  surface: 'Road dips',
+  terrain: 'Hollow in bare earth',
+  sag: 'Sag in the road (phone sensors)',
+  surface: 'Road dips (dashcam)',
   potholes: 'Potholes',
-  kerb: 'Road below kerb',
-  rain: 'Heavy-rain history',
+  drainage: 'Far from a drain',
+  rain: 'Storm above drain capacity',
 }
 
-export function runUrl(run: Run, file = '') {
-  return `${ANALYSIS_BASE}/${SEQUENCE_ID}-${run}/${file}`
+/** Predicted standing water (cm) at a rain rate, interpolated on the pipeline's depth curve. */
+export function depthAt(w: WaterPrediction, rainMmHr: number) {
+  const xs = w.curve.rainMmHr
+  const ys = w.curve.depthCm
+  if (rainMmHr <= xs[0]) return ys[0]
+  for (let i = 1; i < xs.length; i++) {
+    if (rainMmHr <= xs[i]) {
+      const t = (rainMmHr - xs[i - 1]) / (xs[i] - xs[i - 1])
+      return ys[i - 1] + (ys[i] - ys[i - 1]) * t
+    }
+  }
+  return ys[ys.length - 1]
 }
 
-export async function loadAnalysis(run: Run, signal?: AbortSignal): Promise<Analysis> {
-  const res = await fetch(runUrl(run, 'analysis.json'), { signal })
-  if (!res.ok) throw new Error(`analysis.json for ${run}: HTTP ${res.status}`)
+/** URL of a file in a pipeline output folder (data/outputs/<sequence>-<size>/). */
+export function runUrl(sequence: number, run: Run, file = '') {
+  return `${ANALYSIS_BASE}/${sequence}-${run}/${file}`
+}
+
+/** URL of a file next to a loaded analysis.json (frames, overlays, kerb lines). */
+export function fileUrl(a: Analysis, file = '') {
+  return runUrl(a.sequence.id, a.input.size, file)
+}
+
+export async function loadAnalysis(sequence: number, run: Run, signal?: AbortSignal): Promise<Analysis> {
+  const res = await fetch(runUrl(sequence, run, 'analysis.json'), { signal })
+  if (!res.ok) throw new Error(`analysis.json for ${sequence}-${run}: HTTP ${res.status}`)
   return res.json()
 }
 
+/** Length of road filmed (km): GPS track length within each segment, gaps between segments not counted. */
+export function filmedKm(a: Analysis) {
+  let m = 0
+  const bySegment = new Map<string, FrameRecord[]>()
+  for (const f of a.frames) bySegment.set(f.segment, [...(bySegment.get(f.segment) ?? []), f])
+  for (const frames of bySegment.values()) {
+    frames.sort((x, y) => x.index - y.index)
+    for (let i = 1; i < frames.length; i++) m += distance([frames[i - 1].lng, frames[i - 1].lat], [frames[i].lng, frames[i].lat])
+  }
+  return m / 1000
+}
+
 export function isCellId(id: string) {
-  return /^[a-z]+-\d+$/.test(id)
+  return /^[a-z][a-z-]*-\d+$/.test(id)
 }
 
 export function segmentLabel(a: Analysis, segment: string) {
@@ -115,7 +184,7 @@ export function cellOfFrame(a: Analysis, index: number) {
 /** Frame inside a cell with the most to show (deepest dip, then kerb), for thumbnails and entry. */
 export function bestFrame(a: Analysis, cell: CellRecord): FrameRecord {
   const frames = a.frames.filter((f) => cell.frameIndexes.includes(f.index))
-  const score = (f: FrameRecord) => Math.max(0, ...f.dips.map((d) => d.depthCm * d.areaM2)) + (f.kerb ? 1 : 0) + f.potholes.length * 50
+  const score = (f: FrameRecord) => Math.max(0, ...f.dips.map((d) => d.depthCm * d.areaM2)) + (f.kerbs?.length ? 1 : 0) + f.potholes.length * 50
   return frames.reduce((best, f) => (score(f) > score(best) ? f : best), frames[Math.floor(frames.length / 2)])
 }
 

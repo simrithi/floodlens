@@ -13,7 +13,7 @@ import {
   Waves,
   X,
 } from '@phosphor-icons/react'
-import { RUNS, cellOfFrame, runUrl, segmentFrames, segmentLabel } from '../data/analysis'
+import { RUNS, cellOfFrame, isRamp, rampText, runUrl, segmentFrames, segmentLabel } from '../data/analysis'
 import type { FrameRecord, Run } from '../data/analysis'
 import { riskColor, riskLabel } from '../data/hotspots'
 import { useAppState } from '../state'
@@ -67,7 +67,7 @@ function FadeImage({ src, alt, className }: { src: string; alt: string; classNam
   )
 }
 
-function CompareView({ frame, run }: { frame: FrameRecord; run: Run }) {
+function CompareView({ frame, run, seq }: { frame: FrameRecord; run: Run; seq: number }) {
   const [split, setSplit] = useState(50)
   const ref = useRef<HTMLDivElement>(null)
   const dragging = useRef(false)
@@ -88,9 +88,9 @@ function CompareView({ frame, run }: { frame: FrameRecord; run: Run }) {
       onPointerUp={() => (dragging.current = false)}
       onPointerCancel={() => (dragging.current = false)}
     >
-      <FadeImage src={runUrl(run, frame.image)} alt="Original dashcam frame" />
+      <FadeImage src={runUrl(seq, run, frame.image)} alt="Original dashcam frame" />
       <div className="compare-top" style={{ clipPath: `inset(0 0 0 ${split}%)` }}>
-        <FadeImage src={runUrl(run, frame.overlay)} alt="Frame with detected road features" />
+        <FadeImage src={runUrl(seq, run, frame.overlay)} alt="Frame with detected road features" />
       </div>
       <div className="compare-handle" style={{ left: `${split}%` }}>
         <span>
@@ -105,7 +105,8 @@ function CompareView({ frame, run }: { frame: FrameRecord; run: Run }) {
 }
 
 export function StreetView() {
-  const { analysis, streetView, setStreetView, run, setRun, setSelectedId } = useAppState()
+  const { analysis, streetView, setStreetView, run, setRun, setSelectedId, survey } = useAppState()
+  const seq = analysis?.sequence.id ?? survey.sequence
   const reduced = useReducedMotion()
   const [view, setView] = useState<View>('findings')
   const [playing, setPlaying] = useState(false)
@@ -147,9 +148,9 @@ export function StreetView() {
     if (!frame) return
     for (const f of frames.slice(pos + 1, pos + 4)) {
       const img = new Image()
-      img.src = runUrl(run, view === 'compare' || view === 'findings' ? f.overlay : view === 'depth' ? f.depth : f.image)
+      img.src = runUrl(seq, run, view === 'compare' || view === 'findings' ? f.overlay : view === 'depth' ? f.depth : f.image)
     }
-  }, [frame, frames, pos, run, view])
+  }, [frame, frames, pos, run, seq, view])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -209,7 +210,7 @@ export function StreetView() {
             ))}
           </div>
           <div className="seg-toggle" role="group" aria-label="Resolution">
-            {RUNS.map((r) => (
+            {RUNS.filter((r) => survey.runs.includes(r.id)).map((r) => (
               <button key={r.id} className={run === r.id ? 'is-active' : ''} onClick={() => setRun(r.id)}>
                 {r.label}
               </button>
@@ -223,9 +224,9 @@ export function StreetView() {
         <div className="sv-body">
           <div className="sv-stage">
             {view === 'compare' ? (
-              <CompareView frame={frame} run={run} />
+              <CompareView frame={frame} run={run} seq={seq} />
             ) : (
-              <FadeImage src={runUrl(run, imageFor(frame, view))} alt={`Dashcam frame ${frame.index}, ${view} view`} />
+              <FadeImage src={runUrl(seq, run, imageFor(frame, view))} alt={`Dashcam frame ${frame.index}, ${view} view`} />
             )}
             <button className="sv-nav prev" onClick={() => go(pos - 1)} disabled={pos === 0} aria-label="Previous frame">
               <CaretLeft size={22} weight="bold" />
@@ -247,7 +248,8 @@ export function StreetView() {
               <button className="sv-cell" style={{ ['--c' as string]: riskColor(cell.risk) }} onClick={close}>
                 <span className="sv-cell-score mono">{cell.risk}</span>
                 <span>
-                  <span className="sv-cell-label">{riskLabel(cell.risk)}</span>
+                  <span className="sv-cell-label">{isRamp(cell) ? 'Runs off downhill' : riskLabel(cell.risk)}</span>
+                  {cell.drainsTo && isRamp(cell) && <span className="sv-cell-ramp">{rampText(cell.drainsTo)}</span>}
                   <span className="sv-cell-id mono">Stretch {cell.id}, show on map</span>
                 </span>
               </button>
@@ -282,16 +284,16 @@ export function StreetView() {
                       </span>
                     </li>
                   ))}
-                  {frame.kerb && (
-                    <li className="finding kerb">
+                  {(frame.kerbs ?? []).map((k) => (
+                    <li key={k.side} className="finding kerb">
                       <Ruler size={16} />
                       <span>
-                        Road <b className="mono">{frame.kerb.dropCm.toFixed(0)} cm</b> below kerb
-                        <small>{frame.kerb.side} side</small>
+                        Road edge, {k.side} side, next to {k.beyond}
+                        <small>Height not measured: a single camera reads it too low</small>
                       </span>
                     </li>
-                  )}
-                  {!frame.dips.length && !frame.potholes.length && !frame.kerb && <li className="finding none">Nothing measurable in range</li>}
+                  ))}
+                  {!frame.dips.length && !frame.potholes.length && <li className="finding none">No dips or potholes: the road follows its normal shape</li>}
                 </motion.ul>
               </AnimatePresence>
             </div>
@@ -338,7 +340,7 @@ export function StreetView() {
           <div className="sv-track">
             <div className="sv-marks" aria-hidden="true">
               {frames.map((f, i) => {
-                const kind = f.potholes.length ? 'pothole' : f.dips.length ? 'water' : f.kerb ? 'kerb' : null
+                const kind = f.potholes.length ? 'pothole' : f.dips.length ? 'water' : f.kerbs?.length ? 'kerb' : null
                 return kind ? <span key={f.index} className={`mark ${kind}`} style={{ left: `${(i / Math.max(1, frames.length - 1)) * 100}%` }} /> : null
               })}
             </div>

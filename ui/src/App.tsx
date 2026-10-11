@@ -5,6 +5,8 @@ import { MapStage } from './map/MapStage'
 import { Landing } from './landing/Landing'
 import { Dashboard } from './dashboard/Dashboard'
 import { StreetView } from './streetview/StreetView'
+import { ValidationPanel } from './validation/ValidationPanel'
+import { Report } from './report/Report'
 import { AppStateProvider, useAppState } from './state'
 import type { Mode } from './state'
 
@@ -12,8 +14,9 @@ function Shell() {
   const location = useLocation()
   const navigate = useNavigate()
   const reducedMotion = useReducedMotion() ?? false
-  const { setSelectedId, streetView } = useAppState()
+  const { setSelectedId, streetView, showValidation } = useAppState()
   const mode: Mode = location.pathname.startsWith('/map') ? 'app' : 'landing'
+  const reportCity = location.pathname.match(/^\/report\/([a-z]+)/)?.[1]
 
   const onHotspotClick = useCallback(
     (id: string) => {
@@ -22,6 +25,9 @@ function Shell() {
     },
     [mode, navigate, setSelectedId],
   )
+
+  // Findings report (Export PDF): a plain document page, no map.
+  if (reportCity) return <Report city={reportCity} />
 
   return (
     <>
@@ -35,6 +41,7 @@ function Shell() {
         )}
       </AnimatePresence>
       <AnimatePresence>{mode === 'app' && streetView && <StreetView key="street-view" />}</AnimatePresence>
+      <AnimatePresence>{mode === 'app' && showValidation && <ValidationPanel key="validation" />}</AnimatePresence>
     </>
   )
 }

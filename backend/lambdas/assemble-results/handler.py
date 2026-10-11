@@ -15,17 +15,29 @@ Writes: s3://<OUTPUTS_BUCKET>/<sequenceId>-<size>/analysis.json
 Updates: the floodlens-runs DynamoDB item to status "done" (or "failed").
 
 Does not touch the three deep-learning models at all -- this only imports the
-pure-Python parts of core/ (elevation, rainfall, score), so it doesn't need the
-SageMaker container's torch/transformers/ultralytics dependencies.
+pure-Python parts of core/ (elevation, rainfall, score, cities, hydrology,
+drainage), so it doesn't need the SageMaker container's
+torch/transformers/ultralytics dependencies.
+
+Risk model: v1, physical water depth at a 2-year design storm (core/waterdepth.py),
+replacing the old rainfall-percentile heuristic. Cell.summary() needs a Hydrology
+and a Drainage object, both keyed by city -- city_for() picks the city from the
+frames' own coordinates, so this works for any surveyed city, not just Delhi.
 """
 
 import json
 import os
+import shutil
 from datetime import datetime, timezone
+from pathlib import Path
 
 import boto3
 
+from core.cities import city_for
+from core.config import GEO_DIR
+from core.drainage import drainage
 from core.elevation import dem
+from core.hydrology import hydrology
 from core.rainfall import rainfall_stats
 from core.score import build_cells
 
@@ -36,6 +48,23 @@ s3 = boto3.client("s3")
 table = boto3.resource("dynamodb").Table(RUNS_TABLE)
 
 
+def _seed_hydrology() -> None:
+    """Copy the pre-built Delhi hydrology rasters from the image's read-only bundle into
+    /tmp at cold start. Lambda gives each execution environment a fresh /tmp -- anything
+    baked into /tmp at image build time is not what the running container sees, so this
+    has to happen here, once, the first time this module loads in a given environment."""
+    seed = Path("seed/hydro-delhi")
+    dest = GEO_DIR / "hydro"
+    if not seed.exists() or (dest / "twi.tif").exists():
+        return
+    dest.mkdir(parents=True, exist_ok=True)
+    for f in seed.glob("*.tif"):
+        shutil.copy(f, dest / f.name)
+
+
+_seed_hydrology()
+
+
 def handler(event, context):
     run_id = event["runId"]
     sequence_id = event["sequenceId"]
@@ -43,23 +72,29 @@ def handler(event, context):
     records = event["frameRecords"]
 
     try:
-        terrain = dem()
+        first = records[0]
+        c = city_for(first["lat"], first["lng"])
+        terrain = dem(city_key=c.key)
+        hydro = hydrology(c.key)
+        drains = drainage(c.key)
         rain = rainfall_stats()
 
-        cells = [c.summary(terrain, rain["p99WetHourMm"]) for c in build_cells(records)]
+        cells = [cell.summary(terrain, hydro, drains, c.key) for cell in build_cells(records)]
         analysed = [r for r in records if r["ground"] is not None]
 
         analysis = {
             "version": 1,
             "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "city": {"key": c.key, "name": c.name, "drains": c.drains_name},
             "input": {"size": size},
+            "models": {"riskModel": "v1 water depth at 2-year storm"},
             "rainfall": rain,
             "summary": {
                 "frames": len(records),
                 "framesWithRoadModel": len(analysed),
                 "potholes": sum(len(r["potholes"]) for r in records),
                 "dips": sum(len(r["dips"]) for r in records),
-                "kerbMeasurements": sum(1 for r in records if r["kerb"]),
+                "kerbMeasurements": sum(1 for r in records if r["kerbs"]),
                 "cells": len(cells),
                 "worstCells": [c["id"] for c in sorted(cells, key=lambda c: -c["risk"])[:5]],
             },

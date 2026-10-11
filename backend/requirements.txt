@@ -24,6 +24,9 @@ opencv-python-headless>=4.10
 # Geo data
 rasterio>=1.4           # Copernicus DEM (GeoTIFF) sampling
 requests>=2.32          # Open-Meteo rainfall history, KartaView API
+mapbox-vector-tile>=2.1 # OSM roads and waterways from CARTO vector tiles
+pysheds>=0.5            # depressions, flow accumulation on the bare-earth DEM
+scipy>=1.11             # nearest-drain search (KD-tree)
 
 # Utilities
 tqdm>=4.66

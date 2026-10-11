@@ -1,3 +1,5 @@
 numpy>=1.26
 rasterio>=1.4
 requests>=2.32
+scipy>=1.11
+mapbox-vector-tile>=2.1

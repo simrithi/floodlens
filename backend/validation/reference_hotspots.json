@@ -1,0 +1,334 @@
+{
+  "description": "Publicly reported waterlogging hotspots in Delhi, compiled from official announcements (PWD, Delhi Traffic Police) as quoted in news reports, plus locations reported waterlogged in specific storms. This is NOT the full official list (PWD identified 445 points for 2025, but the point-by-point list is not published). Coordinates are geocoded from the names with OpenStreetMap Nominatim and reviewed by hand; they are approximate (about +-150 m).",
+  "sources": {
+    "pwd2025": {
+      "title": "Officers deployed at 335 key spots to prevent waterlogging (PWD, 2025: seven perennial hotspots)",
+      "url": "https://www.tribuneindia.com/news/delhi/officers-deployed-at-335-key-spots-to-prevent-waterlogging",
+      "kind": "official"
+    },
+    "dtp2017": {
+      "title": "Delhi Traffic Police list of waterlogging-prone places sent to agencies (Hindustan Times, 27 Jun 2017)",
+      "url": "https://www.pressreader.com/india/hindustan-times-delhi/20170627/281633895247763",
+      "kind": "official"
+    },
+    "storm2025jul": {
+      "title": "Red alert as heavy rain batters Delhi, waterlogging and traffic snarls (Deccan Herald, July 2025)",
+      "url": "https://www.deccanherald.com/india/delhi/red-alert-issued-as-heavy-rain-batters-delhi-causes-waterlogging-and-traffic-snarls-3653592",
+      "kind": "reported"
+    },
+    "storm2024jun28": {
+      "title": "Heavy rain leaves Delhi waterlogged, traffic crawls (PTI via The Week, 28 Jun 2024)",
+      "url": "https://www.theweek.in/wire-updates/national/2024/06/28/des19-dl-rain-ld-traffic-jam.html",
+      "kind": "reported"
+    },
+    "reports_misc": {
+      "title": "Delhi waterlogging and traffic reports naming ITO, Pragati Maidan tunnel, Moti Bagh, Mathura Road, Vikas Marg, Ring Road near IP Flyover, Rohtak Road, Barapullah, Sarai Kale Khan (Deccan Herald, Tribune, Outlook)",
+      "url": "https://www.deccanherald.com/national/traffic-snarls-waterlogging-as-monsoon-hits-delhi-1122636.html",
+      "kind": "reported"
+    },
+    "underpasses": {
+      "title": "PWD underpass reports: Moolchand, Dhaula Kuan, Azadpur, Shakti Nagar, AIIMS, Zakhira (Daily Pioneer, The Patriot)",
+      "url": "https://thepatriot.in/delhi-ncr/new-drains-sumps-automated-pump-house-delhi-pwds-plan-to-tackle-waterlogging-at-seven-hotspots-70243",
+      "kind": "reported"
+    }
+  },
+  "hotspots": [
+    {
+      "id": "R01",
+      "name": "Minto Bridge underpass",
+      "query": "Minto Bridge, New Delhi",
+      "sources": [
+        "pwd2025",
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R02",
+      "name": "Pul Prahladpur underpass",
+      "query": "Pul Prahladpur, Delhi",
+      "sources": [
+        "pwd2025",
+        "underpasses"
+      ]
+    },
+    {
+      "id": "R03",
+      "name": "Ring Road opposite WHO building",
+      "query": "World Health Organization South-East Asia Regional Office, Delhi",
+      "sources": [
+        "pwd2025"
+      ]
+    },
+    {
+      "id": "R04",
+      "name": "Jahangirpuri Metro Station Road",
+      "query": "Jahangirpuri metro station, Delhi",
+      "sources": [
+        "pwd2025"
+      ]
+    },
+    {
+      "id": "R05",
+      "name": "Under Zakhira flyover",
+      "query": "Zakhira Flyover, Delhi",
+      "sources": [
+        "pwd2025",
+        "underpasses"
+      ]
+    },
+    {
+      "id": "R06",
+      "name": "Loni Road Golchakkar",
+      "query": "Loni Road, Shahdara",
+      "sources": [
+        "pwd2025"
+      ]
+    },
+    {
+      "id": "R07",
+      "name": "Karala-Kanjhawla stretch",
+      "query": "Karala, Delhi",
+      "sources": [
+        "pwd2025"
+      ]
+    },
+    {
+      "id": "R08",
+      "name": "Azad Market Chowk, Rani Jhansi Road",
+      "query": "Azad Market, Delhi",
+      "sources": [
+        "dtp2017"
+      ]
+    },
+    {
+      "id": "R09",
+      "name": "Defence Colony flyover",
+      "query": "Defence Colony, New Delhi",
+      "sources": [
+        "dtp2017"
+      ]
+    },
+    {
+      "id": "R10",
+      "name": "Laxmi Nagar Metro Station, Vikas Marg",
+      "query": "Laxmi Nagar metro station, Delhi",
+      "sources": [
+        "dtp2017",
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R11",
+      "name": "Kamla Market roundabout",
+      "query": "Kamla Market, Delhi",
+      "sources": [
+        "dtp2017"
+      ]
+    },
+    {
+      "id": "R12",
+      "name": "AIIMS underpass",
+      "query": "AIIMS flyover, New Delhi",
+      "sources": [
+        "dtp2017",
+        "underpasses"
+      ]
+    },
+    {
+      "id": "R13",
+      "name": "Adhchini T-point",
+      "query": "Adchini, New Delhi",
+      "sources": [
+        "dtp2017"
+      ]
+    },
+    {
+      "id": "R14",
+      "name": "ITO crossing",
+      "query": "ITO, New Delhi",
+      "sources": [
+        "storm2025jul",
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R15",
+      "name": "Minto Road",
+      "query": "Minto Road, New Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R16",
+      "name": "Dhaula Kuan flyover",
+      "query": "Dhaula Kuan, New Delhi",
+      "sources": [
+        "storm2024jun28",
+        "storm2025jul",
+        "underpasses"
+      ]
+    },
+    {
+      "id": "R17",
+      "name": "Nehru Place",
+      "query": "Nehru Place Market, Kalkaji",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R18",
+      "name": "Kailash Colony Road",
+      "query": "Kailash Colony, New Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R19",
+      "name": "Naraina",
+      "query": "Naraina Vihar, New Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R20",
+      "name": "Patel Nagar",
+      "query": "Patel Nagar metro station, Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R21",
+      "name": "Vijay Chowk",
+      "query": "Vijay Chowk, New Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R22",
+      "name": "Jangpura",
+      "query": "Jangpura, New Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R23",
+      "name": "RK Puram",
+      "query": "R K Puram, New Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R24",
+      "name": "Lajpat Nagar",
+      "query": "Lajpat Nagar, New Delhi",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R25",
+      "name": "Mehrauli-Gurgaon Road",
+      "query": "Qutub Minar Metro Station",
+      "sources": [
+        "storm2025jul"
+      ]
+    },
+    {
+      "id": "R26",
+      "name": "Under Moti Bagh metro station",
+      "query": "Moti Bagh, New Delhi",
+      "sources": [
+        "reports_misc",
+        "storm2024jun28"
+      ]
+    },
+    {
+      "id": "R27",
+      "name": "Pragati Maidan tunnel",
+      "query": "Pragati Maidan, New Delhi",
+      "sources": [
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R28",
+      "name": "Mathura Road near Pragati Maidan",
+      "query": "Supreme Court metro station, New Delhi",
+      "sources": [
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R29",
+      "name": "Ring Road near IP Flyover",
+      "query": "Indraprastha Metro Station",
+      "sources": [
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R30",
+      "name": "Rohtak Road",
+      "query": "Punjabi Bagh, Delhi",
+      "sources": [
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R31",
+      "name": "Bhairon Marg",
+      "query": "Bhairon Road, New Delhi",
+      "sources": [
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R32",
+      "name": "Rajghat, Ring Road",
+      "query": "Raj Ghat, Delhi",
+      "sources": [
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R33",
+      "name": "Sarai Kale Khan",
+      "query": "Sarai Kale Khan",
+      "sources": [
+        "reports_misc"
+      ]
+    },
+    {
+      "id": "R34",
+      "name": "Moolchand underpass",
+      "query": "Moolchand, New Delhi",
+      "sources": [
+        "underpasses"
+      ]
+    },
+    {
+      "id": "R35",
+      "name": "Azadpur underpass",
+      "query": "Azadpur metro station, Delhi",
+      "sources": [
+        "underpasses"
+      ]
+    },
+    {
+      "id": "R36",
+      "name": "Shakti Nagar underpass",
+      "query": "Shakti Nagar, Delhi",
+      "sources": [
+        "underpasses"
+      ]
+    }
+  ]
+}

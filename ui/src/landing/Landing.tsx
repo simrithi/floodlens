@@ -3,6 +3,7 @@ import type { Variants } from 'motion/react'
 import { ArrowRight } from '@phosphor-icons/react'
 import { Logo } from '../ui/Logo'
 import { RISK_COLORS } from '../data/hotspots'
+import { useRouteProfile } from '../dashboard/routeProfile'
 import './landing.css'
 
 const ease = [0.16, 1, 0.3, 1] as const
@@ -20,6 +21,7 @@ const item: Variants = {
 }
 
 export function Landing({ onEnter }: { onEnter: () => void }) {
+  const profile = useRouteProfile()
   return (
     <motion.div className="landing" initial="hidden" animate="show" exit="exit">
       <motion.div
@@ -67,7 +69,10 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
           <span>Drains</span>
           <span>Floods</span>
         </span>
-        <span className="landing-legend-note">Sample data</span>
+        <span className="landing-legend-note">
+          Heatmap shows example data.
+          {profile && ` Inside: ${(profile.filmedM / 1000).toFixed(1)} km of Delhi roads measured from dashcam footage.`}
+        </span>
       </motion.aside>
     </motion.div>
   )

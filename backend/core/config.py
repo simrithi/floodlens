@@ -21,9 +21,8 @@ POTHOLE_REPO = "keremberke/yolov8m-pothole-segmentation"
 SEGFORMER_REPO = "nvidia/segformer-b2-finetuned-cityscapes-1024-1024"
 DEPTH_REPO = "depth-anything/Depth-Anything-V2-Small-hf"
 
-# Copernicus GLO-30 DEM tile covering Delhi, from the AWS Registry of Open Data (public bucket).
-DEM_TILE = "Copernicus_DSM_COG_10_N28_00_E077_00_DEM"
-DEM_URL = f"https://copernicus-dem-30m.s3.amazonaws.com/{DEM_TILE}/{DEM_TILE}.tif"
+# Elevation tiles (Copernicus GLO-30 from the AWS Registry of Open Data; FABDEM bare earth, University of
+# Bristol, CC BY-NC-SA 4.0) are per city: see core/cities.py.
 
 # Cityscapes label ids used by SegFormer.
 ROAD, SIDEWALK = 0, 1
@@ -33,7 +32,8 @@ OBSTACLES = (11, 12, 13, 14, 15, 16, 17, 18)
 
 @dataclass(frozen=True)
 class Camera:
-    # Xiaomi MI 9 main camera horizontal field of view, from the KartaView sequence metadata.
+    # Default: Xiaomi MI 9 main camera (Delhi sequence). Each sequence's own value from KartaView
+    # metadata (frames.json "camera") overrides it, see frames.camera_for().
     hfov_deg: float = 67.935
     # Phone on the dashboard: lens height above the road (metres). Sets the metric scale.
     height_m: float = 1.25

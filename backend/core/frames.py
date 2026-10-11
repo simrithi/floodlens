@@ -7,7 +7,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from .config import KARTAVIEW_DIR, MAX_WORK_WIDTH
+from .config import CAMERA, KARTAVIEW_DIR, MAX_WORK_WIDTH, Camera
 
 
 @dataclass(frozen=True)
@@ -45,6 +45,12 @@ def load_frames(sequence_id: int, segments: list[str] | None = None) -> tuple[di
     ]
     frames.sort(key=lambda f: f.index)
     return meta, frames
+
+
+def camera_for(meta: dict) -> Camera:
+    """The sequence's camera: its horizontal field of view from KartaView metadata, else the default."""
+    hfov = (meta.get("camera") or {}).get("hfovDeg")
+    return Camera(hfov_deg=float(hfov), height_m=CAMERA.height_m, hood_fraction=CAMERA.hood_fraction) if hfov else CAMERA
 
 
 def load_image(path: Path, max_width: int = MAX_WORK_WIDTH) -> np.ndarray:
