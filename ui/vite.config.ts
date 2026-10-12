@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import type { Connect, Plugin } from 'vite'
 
 const OUTPUTS_DIR = path.resolve(fileURLToPath(new URL('.', import.meta.url)), '../data/outputs')
@@ -37,8 +37,14 @@ function serveAnalysis(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), serveAnalysis()],
-  // MapLibre 6 loads its worker relative to its own module URL; pre-bundling breaks that path.
-  optimizeDeps: { exclude: ['maplibre-gl'] },
+export default defineConfig(({ mode }) => {
+  // `npm run dev:demo` sets VITE_DEMO_PROXY (see .env.demo): /analysis is then proxied to the live
+  // site's published results, so the app runs without data/ and without an AWS account.
+  const demoProxy = loadEnv(mode, process.cwd(), '').VITE_DEMO_PROXY
+  return {
+    plugins: [react(), ...(demoProxy ? [] : [serveAnalysis()])],
+    server: demoProxy ? { proxy: { '/analysis': { target: demoProxy, changeOrigin: true } } } : undefined,
+    // MapLibre 6 loads its worker relative to its own module URL; pre-bundling breaks that path.
+    optimizeDeps: { exclude: ['maplibre-gl'] },
+  }
 })

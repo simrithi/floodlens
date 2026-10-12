@@ -48,3 +48,4 @@ backend/lambdas/ddb-item-*.json
 # Videos and voice-over assets live outside the repo (link from the README instead)
 *.mp4
 vo/
+!ui/.env.demo

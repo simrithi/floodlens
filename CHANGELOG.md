@@ -2,9 +2,12 @@
 
 All notable changes. Dates are when the change landed.
 
-## Unreleased
+## 0.1.0 (2026-10-12) - AWS hackathon submission
 
 ### Added
+- LICENSE (Apache-2.0) and NOTICE for the data licences; architecture diagrams (`docs/architecture.md`); `docs/LEARNINGS.md`.
+- `npm run dev:demo`: run the app with no AWS account and no `data/` folder, reading the published results.
+- A manual deploy workflow (needs the one-time setup in `infra/README.md`) and a quieter Dependabot configuration.
 - Name and logo: the web app is now called Varshik everywhere users see it, with a new mark (a raindrop with a road running into it) and favicon. AWS resource names still start with `floodlens-` and are unchanged.
 - AI frame check on every spot card: Bedrock Nova Lite reads the spot's dashcam frames for a visible drain inlet and blockage. Shown as evidence to verify, with a 30-per-hour limit.
 - Officer brief in English (Nova Lite) and Hindi (Nova Pro). Rejected unless every number and spot id matches the findings; spot names are added by code. 20 fresh briefs per hour.

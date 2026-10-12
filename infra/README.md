@@ -16,6 +16,14 @@ This folder defines **one stack, `FloodLensWeb`**: the private S3 bucket and the
 
 The pipeline and AI backend were created by hand with the CLI and the JSON policy files in [`../backend/lambdas/`](../backend/lambdas/): the SageMaker endpoint, the Step Functions state machine, the nine Lambda functions and their Function URLs, DynamoDB tables, the SNS topic, the EventBridge schedule, ECR repositories and IAM roles. Putting them in CDK is the main piece of infrastructure work still open, and it would also let the one shared Lambda role be split into a role per function. See [`../docs/AWS_SUBMISSION.md`](../docs/AWS_SUBMISSION.md) for the resource list and teardown steps.
 
+## Deploying from GitHub Actions
+
+`.github/workflows/deploy.yaml` is a manual workflow (Actions, then deploy, then Run workflow) that builds the app, uploads it and invalidates the cache. It is not configured yet, and fails with a clear message until it is. One-time setup:
+
+1. In AWS IAM, add the GitHub OIDC identity provider (`token.actions.githubusercontent.com`) and a role that trusts only this repository's `main` branch.
+2. Give the role only what `deploy.sh` needs: `s3:PutObject`, `s3:ListBucket` and `s3:DeleteObject` on the site bucket's `assets/` and root files, and `cloudfront:CreateInvalidation` on the distribution.
+3. In the repository settings, create an environment named `production` and add the variables `AWS_DEPLOY_ROLE_ARN`, `VITE_API_FRAME_CHECK`, `VITE_API_BRIEF` and `VITE_API_ACTIONS`. No secrets are needed.
+
 ## Commands
 
 ```bash

@@ -7,6 +7,7 @@ React 19, TypeScript, Vite and MapLibre. It reads the pipeline's output over HTT
 ```bash
 npm install
 npm run dev      # http://localhost:5173, serves /analysis from ../data/outputs
+npm run dev:demo # same, but reads the published results from the live site (no data/ and no AWS account)
 npm run build    # type-check and production build into dist/
 npm run lint     # oxlint
 ```

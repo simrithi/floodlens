@@ -1,0 +1,13 @@
+Varshik
+Copyright 2026 Simrithi S
+
+The code in this repository is licensed under the Apache License 2.0 (see LICENSE).
+The data it uses has its own licences, which the Apache licence does not change:
+
+- KartaView street imagery: CC BY-SA 4.0 (attribution must stay visible in the app)
+- FABDEM elevation: CC BY-NC-SA 4.0 (non-commercial)
+- Copernicus GLO-30 elevation: Copernicus licence, via the AWS Registry of Open Data
+- OpenStreetMap drains and roads: ODbL
+- Bengaluru storm-water drain map (KSRSAC 2022): public domain, via OpenCity
+- Open-Meteo rain data: CC BY 4.0
+- Model weights (SegFormer, Depth Anything V2, YOLOv8) keep their own licences

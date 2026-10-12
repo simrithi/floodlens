@@ -8,9 +8,11 @@
 [![React](https://img.shields.io/badge/React-19-61dafb)](ui/package.json)
 [![Built on AWS](https://img.shields.io/badge/built%20on-AWS-ff9900)](#aws-architecture)
 [![CDK](https://img.shields.io/badge/AWS%20CDK-web%20stack-232f3e)](infra/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![CI](https://github.com/simrithi/floodlens/actions/workflows/ci.yaml/badge.svg)](https://github.com/simrithi/floodlens/actions/workflows/ci.yaml)
 [![Status](https://img.shields.io/badge/validation-preliminary-orange)](#validation)
 
-**[Live demo](https://d24wvc44c3vaxz.cloudfront.net/)** · **[Demo video](https://youtu.be/R2T2AnE9TvM)** · **[AWS notes](docs/AWS_SUBMISSION.md)** · **[Architecture diagrams](docs/diagrams/)**
+**[Live demo](https://d24wvc44c3vaxz.cloudfront.net/)** · **[Demo video](https://youtu.be/nPr0dBLUtUk)** · **[Blog post](https://builder.aws.com/content/3KYn3Kwff6ZOhYY2RbAhKFBszHr/varshik)** · **[Architecture](docs/architecture.md)** · **[What I learned](docs/LEARNINGS.md)** · **[AWS notes](docs/AWS_SUBMISSION.md)**
 
 Three deep-learning models (SegFormer-B2, Depth Anything V2, YOLOv8m-seg) run on one Amazon SageMaker GPU endpoint. Their output is fused with smartphone road-height profiles, Copernicus GLO-30 / FABDEM terrain and a water-balance model to estimate standing-water depth under 2-, 5- and 10-year storms, for Delhi and Bengaluru.
 
@@ -20,27 +22,27 @@ Varshik started from a personal place: growing up in Tamil Nadu, the author saw 
 
 ## Try it in two minutes
 
-The quickest look is the [live demo](https://d24wvc44c3vaxz.cloudfront.net/). To run things locally, note that `data/` (frames, models, analysis outputs) is gitignored, so the commands below need those files in place first.
+No AWS account, no GPU and no `data/` folder needed. This runs the web app on your machine and reads the published results (Delhi, Bengaluru ORR, Bellandur; dashcam frames, overlays, findings) from the live site:
 
 ```bash
-# the web app (set VITE_ANALYSIS_BASE to where the analysis outputs are served)
-cd ui && npm install && npm run dev
-
-# re-score a survey locally from an existing analysis.json (no neural networks, no GPU)
-cd backend && python run_local.py --rescore
-
-# reproduce the Delhi hotspot validation
-cd backend && python run_validate.py
-
-# run the full vision pipeline on a few frames (needs the downloaded models, see scripts/download_assets.py)
-cd backend && python run_local.py --segments minto --limit 10
-
-# infrastructure tests
-cd infra && npm install && npm test
-
-# publish the web app (build, upload, cache invalidation)
-bash infra/deploy.sh
+cd ui
+npm install
+npm run dev:demo      # open http://localhost:5173
 ```
+
+The AI frame check, brief and officer log need AWS Function URLs, so they are hidden in this mode. The rest (map, street view, flow lines, rain simulator, reports) works.
+
+Everything else:
+
+```bash
+cd backend && python -m pytest tests            # 23 tests, no AWS needed
+cd infra && npm install && npm test              # 5 template tests
+cd backend && python run_validate.py             # Delhi hotspot validation (needs data/)
+cd backend && python run_local.py --rescore      # recompute risk from an analysis.json (needs data/, no GPU)
+bash infra/deploy.sh                             # publish the web app (needs your AWS account)
+```
+
+`data/` (footage, rasters, outputs, model weights) is git-ignored, so running the full vision pipeline yourself needs your own copy; see [`backend/README.md`](backend/README.md).
 
 ## What it does, on one road
 
@@ -95,6 +97,7 @@ These results are preliminary. They do not show that Varshik predicts every floo
 - [Security and operational controls](#security-and-operational-controls)
 - [Data provenance and licensing](#data-provenance-and-licensing)
 - [AI used](#ai-used)
+- [What I learned](#what-i-learned)
 - [Tests and verification](#tests-and-verification)
 - [What the results do and do not show](#what-the-results-do-and-do-not-show)
 - [Limitations](#limitations)
@@ -122,6 +125,8 @@ Varshik should not be treated as a real-time flood-warning authority or a replac
 ![Varshik end-to-end system architecture](docs/diagrams/Varshik_System_Architecture.svg)
 
 *Figure 1. End-to-end architecture connecting geospatial inputs, analysis outputs, the web application, and AWS services.*
+
+More diagrams (one survey through the pipeline, failure handling, the AI guardrails, publishing) are in [`docs/architecture.md`](docs/architecture.md).
 
 The pipeline and frontend have separate responsibilities:
 
@@ -466,6 +471,18 @@ Guardrails on the two Bedrock models: the frame check is evidence for a person t
 - **The scientific results are preliminary.** See "What the results do and do not show".
 - **The upload and run-status Function URLs return 403 and are not used by the app.** `get-upload-url` hands out presigned upload links, so it is left closed until it has authentication.
 
+## What I learned
+
+The short version; the full list, each tied to the event it came from, is in [`docs/LEARNINGS.md`](docs/LEARNINGS.md).
+
+- **A green run proves nothing.** A 422-frame run showed SUCCEEDED and produced no output. The result file is the success signal.
+- **Learn the service limits before the long job.** Step Functions' 256 KB state limit, a 60-second Lambda timeout, a Function URL that needs two permissions, S3 returning AccessDenied for a missing key, and BuildKit manifests Lambda rejects each cost hours.
+- **Test against what the system really produces.** Two Lambdas looked for a field that real data does not have and skipped every spot without an error.
+- **Make the model unable to change facts.** A Kannada brief turned Connaught Place into Kanyakumari Place. Names are now added by code, and anything a model writes is checked before it is shown.
+- **Do not ship what I cannot read.** Kannada was removed until a fluent reviewer can check it.
+- **Say the weak numbers.** Terrain alone scored AUC 0.57, and the stretch-level test 0.45, next to 0.66 and 0.69.
+- **Cost shapes the design.** One idle GPU endpoint is about US$0.74 an hour, which is why frames run one at a time.
+
 ## What the results do and do not show
 
 Measured by the scripts in this repository, on Delhi's 36 publicly reported waterlogging hotspots against 400 random main-road points (`backend/run_validate.py`). The numbers are weaker than a headline AUC suggests, and the weak ones are listed first.
@@ -537,6 +554,10 @@ Open work, in the order it matters:
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). In short: no invented numbers, AI output stays evidence and never feeds a number, and check for the output file, not just a green run.
+
+## Releases and licence
+
+The code is licensed under [Apache-2.0](LICENSE). The data it uses keeps its own licences; see [`NOTICE`](NOTICE) (note that FABDEM is non-commercial). The version submitted to the AWS hackathon is frozen as the tag `aws-hackathon-submission`, and releases are listed under [Releases](https://github.com/simrithi/floodlens/releases).
 
 ## Acknowledgements
 

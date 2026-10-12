@@ -1,21 +1,41 @@
+# Quiet by design: one grouped pull request per ecosystem per month, and no major-version jumps.
+# Security updates are separate and still open as soon as an advisory appears.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /ui
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    groups:
+      all:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /infra
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    groups:
+      all:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: pip
     directory: /backend
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    groups:
+      all:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    groups:
+      all:
+        patterns: ["*"]
