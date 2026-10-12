@@ -35,6 +35,15 @@ WATCH_CM = 5.0
 CLOSE_CM = 15.0
 
 s3 = boto3.client("s3")
+
+SITE_BUCKET = os.environ.get("SITE_BUCKET")
+
+
+def _publish_to_site(key: str, body: str) -> None:
+    """The web app reads cached results through CloudFront from the site bucket, so copy each one there too."""
+    if SITE_BUCKET:
+        s3.put_object(Bucket=SITE_BUCKET, Key=key, Body=body, ContentType="application/json")
+
 sns = boto3.client("sns")
 
 
@@ -82,6 +91,7 @@ def handler(event, context):
             "spots": flagged,
         }
         s3.put_object(Bucket=OUTPUTS_BUCKET, Key=alert_key, Body=json.dumps(alert), ContentType="application/json")
+        _publish_to_site(alert_key, json.dumps(alert))
 
         if flagged:
             _notify(city, tomorrow, flagged)
@@ -109,20 +119,17 @@ def _forecast_for(lat: float, lng: float) -> float | None:
 
 
 def _expected_depth(spot: dict) -> tuple[dict | None, str]:
-    """The curve of the spot's deepest stretch (across its stretches), plus a note on
-    whether the forecast had to be used as hourly-not-burst (always true right now)."""
-    best_curve, best_depth = None, -1.0
-    for stretch in spot.get("stretches", []):
-        analysis = _get_json(f"analysis/{stretch['sequenceId']}-lth/analysis.json")
-        if analysis is None:
-            continue
-        cell = next((c for c in analysis["cells"] if c["id"] == stretch["cellId"]), None)
-        if cell is None:
-            continue
-        if cell["depth2yCm"] > best_depth:
-            best_depth, best_curve = cell["depth2yCm"], cell["water"]["curve"]
+    """The depth-vs-rain curve of the spot's worst stretch, read from the survey's analysis.json
+    (<sequence>-lth/analysis.json in the outputs bucket), plus a note that the forecast is used as
+    hourly rain, not a 15-minute burst (always true right now)."""
     note = "hourly rain used as-is; 15-minute burst not modelled (no sourced conversion ratio)"
-    return best_curve, note
+    analysis = _get_json(f"{spot['sequence']}-lth/analysis.json")
+    if analysis is None:
+        return None, note
+    cell = next((c for c in analysis["cells"] if c["id"] == spot["worstCell"]), None)
+    if cell is None:
+        return None, note
+    return cell["water"]["curve"], note
 
 
 def _interp(xs: list[float], ys: list[float], x: float) -> float:
@@ -145,7 +152,7 @@ def _notify(city: str, date: str, flagged: list[dict]) -> None:
     lines.append(f"{SITE_URL}/map?survey={city}")
     sns.publish(
         TopicArn=SNS_TOPIC_ARN,
-        Subject=f"FloodLens: {len(flagged)} spot(s) flagged for tomorrow in {city.title()}",
+        Subject=f"Varshik: {len(flagged)} spot(s) flagged for tomorrow in {city.title()}",
         Message="\n".join(lines),
     )
 

@@ -14,6 +14,22 @@
       "Resource": "arn:aws:s3:::floodlens-raw-563469689377/*"
     },
     {
+      "Sid": "ListOutputsSoMissingKeysAre404NotAccessDenied",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::floodlens-outputs-563469689377"
+    },
+    {
+      "Sid": "PublishCachedResultsToSite",
+      "Effect": "Allow",
+      "Action": "s3:PutObject",
+      "Resource": [
+        "arn:aws:s3:::floodlensweb-sitebucket397a1860-lklujpasrixv/analysis/checks/*",
+        "arn:aws:s3:::floodlensweb-sitebucket397a1860-lklujpasrixv/analysis/briefs/*",
+        "arn:aws:s3:::floodlensweb-sitebucket397a1860-lklujpasrixv/analysis/alerts/*"
+      ]
+    },
+    {
       "Sid": "WriteOutputs",
       "Effect": "Allow",
       "Action": ["s3:PutObject", "s3:GetObject"],
@@ -49,7 +65,9 @@
       "Action": ["bedrock:InvokeModel"],
       "Resource": [
         "arn:aws:bedrock:us-east-1:563469689377:inference-profile/us.amazon.nova-lite-v1:0",
-        "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0"
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-lite-v1:0",
+        "arn:aws:bedrock:us-east-1:563469689377:inference-profile/us.amazon.nova-pro-v1:0",
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-pro-v1:0"
       ]
     },
     {

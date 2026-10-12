@@ -44,22 +44,82 @@ from core.score import build_cells
 OUTPUTS_BUCKET = os.environ["OUTPUTS_BUCKET"]
 RUNS_TABLE = os.environ["RUNS_TABLE"]
 
+
+def _load_record(item):
+    """invoke-frame returns a pointer to the full record (Step Functions' 256 KB state limit);
+    older runs passed the record inline, so accept both."""
+    if "s3Key" in item and "ground" not in item:
+        body = boto3.client("s3").get_object(Bucket=OUTPUTS_BUCKET, Key=item["s3Key"])["Body"].read()
+        return json.loads(body)
+    return item
+
+
+# Mirrors scripts/fetch_kartaview.py's SEGMENTS + ATTRIBUTION.md for the sequences this
+# project surveys. build_findings.py needs this (sequence id, named segment labels, and
+# licence attribution) alongside the per-frame records; it isn't in frameRecords itself.
+SEQUENCE_META = {
+    4020141: {
+        "device": "Xiaomi MI 9",
+        "date": "2021-12-21",
+        "segments": [
+            {"name": "ito", "label": "ITO crossing approach"},
+            {"name": "minto", "label": "Minto Bridge underpass"},
+        ],
+    },
+    3827609: {
+        "device": "unknown KartaView contributor device",
+        "date": "2021-09",
+        "segments": [
+            {"name": "orr-south", "label": "ORR Marathahalli to Kadubeesanahalli (southbound)"},
+            {"name": "orr-north", "label": "ORR Kadubeesanahalli to Marathahalli (northbound)"},
+        ],
+    },
+    9316057: {
+        "device": "unknown KartaView contributor device",
+        "date": "2024-08",
+        "segments": [
+            {"name": "bellandur", "label": "Bellandur, ORR side roads"},
+        ],
+    },
+}
+
+
+def _sequence_block(sequence_id: int) -> dict:
+    meta = SEQUENCE_META.get(sequence_id, {"device": "unknown", "date": "unknown", "segments": []})
+    return {
+        "id": sequence_id,
+        "url": f"https://kartaview.org/details/{sequence_id}",
+        "attribution": (
+            f"Imagery: KartaView sequence {sequence_id}, recorded {meta['date']} on a {meta['device']}, "
+            "licensed CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)."
+        ),
+        "segments": meta["segments"],
+    }
+
 s3 = boto3.client("s3")
 table = boto3.resource("dynamodb").Table(RUNS_TABLE)
 
 
 def _seed_hydrology() -> None:
-    """Copy the pre-built Delhi hydrology rasters from the image's read-only bundle into
-    /tmp at cold start. Lambda gives each execution environment a fresh /tmp -- anything
-    baked into /tmp at image build time is not what the running container sees, so this
-    has to happen here, once, the first time this module loads in a given environment."""
-    seed = Path("seed/hydro-delhi")
-    dest = GEO_DIR / "hydro"
-    if not seed.exists() or (dest / "twi.tif").exists():
-        return
-    dest.mkdir(parents=True, exist_ok=True)
-    for f in seed.glob("*.tif"):
-        shutil.copy(f, dest / f.name)
+    """Copy the pre-built hydrology rasters from the image's read-only bundle into /tmp at
+    cold start, for every city baked in. Lambda gives each execution environment a fresh
+    /tmp -- anything baked into /tmp at image build time is not what the running container
+    sees, so this has to happen here, once, the first time this module loads in a given
+    environment."""
+    for seed_name, dest in (("hydro-delhi", GEO_DIR / "hydro"), ("hydro-bengaluru", GEO_DIR / "bengaluru" / "hydro")):
+        seed = Path("seed") / seed_name
+        if not seed.exists() or (dest / "twi.tif").exists():
+            continue
+        dest.mkdir(parents=True, exist_ok=True)
+        for f in seed.glob("*.tif"):
+            shutil.copy(f, dest / f.name)
+    # Official drain network for Bengaluru (KSRSAC 2022, converted from OpenCity's KML): core/drainage.py reads it.
+    drains = Path("seed") / "geo-bengaluru"
+    if drains.exists():
+        (GEO_DIR / "bengaluru").mkdir(parents=True, exist_ok=True)
+        for f in drains.glob("*.json"):
+            if not (GEO_DIR / "bengaluru" / f.name).exists():
+                shutil.copy(f, GEO_DIR / "bengaluru" / f.name)
 
 
 _seed_hydrology()
@@ -69,7 +129,7 @@ def handler(event, context):
     run_id = event["runId"]
     sequence_id = event["sequenceId"]
     size = event["size"]
-    records = event["frameRecords"]
+    records = [_load_record(r) for r in event["frameRecords"]]
 
     try:
         first = records[0]
@@ -85,6 +145,7 @@ def handler(event, context):
         analysis = {
             "version": 1,
             "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "sequence": _sequence_block(sequence_id),
             "city": {"key": c.key, "name": c.name, "drains": c.drains_name},
             "input": {"size": size},
             "models": {"riskModel": "v1 water depth at 2-year storm"},

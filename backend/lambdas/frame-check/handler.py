@@ -16,6 +16,7 @@ public, unauthenticated Function URL can't run up Bedrock cost.
 
 import json
 import os
+import re
 import time
 from datetime import datetime, timezone
 
@@ -27,6 +28,15 @@ RATE_LIMIT_KEY = "analysis/checks/_ratelimit.json"
 RATE_LIMIT_PER_HOUR = 30
 
 s3 = boto3.client("s3")
+
+SITE_BUCKET = os.environ.get("SITE_BUCKET")
+
+
+def _publish_to_site(key: str, body: str) -> None:
+    """The web app reads cached results through CloudFront from the site bucket, so copy each one there too."""
+    if SITE_BUCKET:
+        s3.put_object(Bucket=SITE_BUCKET, Key=key, Body=body, ContentType="application/json")
+
 bedrock = boto3.client("bedrock-runtime")
 
 SCHEMA_KEYS = {
@@ -56,8 +66,10 @@ def handler(event, context):
         city = body["city"]
         spot_id = body["spotId"]
         refresh = bool(body.get("refresh", False))
-    except (KeyError, json.JSONDecodeError) as e:
+    except (KeyError, json.JSONDecodeError, TypeError) as e:
         return _response(400, {"error": f"invalid request body: {e}"})
+    if not (isinstance(city, str) and re.fullmatch(r"[a-z]{1,30}", city) and isinstance(spot_id, str) and re.fullmatch(r"S\d{1,3}", spot_id)):
+        return _response(400, {"error": "city must be lowercase letters and spotId like S1"})
 
     cache_key = f"analysis/checks/{city}/{spot_id}.json"
 
@@ -87,25 +99,26 @@ def handler(event, context):
     result["model"] = MODEL_ID
     result["generatedAt"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     s3.put_object(Bucket=OUTPUTS_BUCKET, Key=cache_key, Body=json.dumps(result), ContentType="application/json")
+    _publish_to_site(cache_key, json.dumps(result))
     return _response(200, result)
 
 
 def _collect_frames(spot: dict, max_frames: int = 4) -> list[dict]:
-    """Best frame first, then up to 3 more from the spot's stretches. Original images,
-    not overlays -- the model should see the road as a driver does."""
-    out = []
-    for stretch in spot.get("stretches", [])[:3]:
-        prefix = f"analysis/{stretch['sequenceId']}-lth"
-        analysis = _get_json(f"{prefix}/analysis.json")
-        if analysis is None:
-            continue
-        cell = next((c for c in analysis["cells"] if c["id"] == stretch["cellId"]), None)
-        if cell is None:
+    """Best frame first (the one the findings picked), then up to 3 more from the spot's stretches.
+    Original images, not overlays -- the model should see the road as a driver does.
+    Layout in the outputs bucket: <sequence>-lth/analysis.json and <sequence>-lth/frames/<n>.jpg."""
+    prefix = f"{spot['sequence']}-lth"
+    out = [{"index": spot["frame"]["index"], "key": spot["frame"]["image"]}]
+    analysis = _get_json(f"{prefix}/analysis.json")
+    if analysis is None:
+        return out
+    frames = {f["index"]: f for f in analysis["frames"]}
+    for cell in analysis["cells"]:
+        if cell["id"] not in spot["cells"]:
             continue
         for idx in cell["frameIndexes"]:
-            frame = next((f for f in analysis["frames"] if f["index"] == idx), None)
-            if frame is not None:
-                out.append({"index": idx, "key": f"{prefix}/{frame['image']}"})
+            if idx in frames and all(o["index"] != idx for o in out):
+                out.append({"index": idx, "key": f"{prefix}/{frames[idx]['image']}"})
             if len(out) >= max_frames:
                 return out
     return out

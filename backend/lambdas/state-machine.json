@@ -15,7 +15,9 @@
         "outputPrefix.$": "$.outputPrefix"
       },
       "ItemProcessor": {
-        "ProcessorConfig": { "Mode": "INLINE" },
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
         "StartAt": "InvokeFrame",
         "States": {
           "InvokeFrame": {
@@ -25,11 +27,17 @@
               "FunctionName": "${InvokeFrameFunctionArn}",
               "Payload.$": "$"
             },
-            "ResultSelector": { "Payload.$": "$.Payload" },
+            "ResultSelector": {
+              "Payload.$": "$.Payload"
+            },
             "OutputPath": "$.Payload",
             "Retry": [
               {
-                "ErrorEquals": ["Lambda.ServiceException", "Lambda.TooManyRequestsException", "Lambda.SdkClientException"],
+                "ErrorEquals": [
+                  "Lambda.ServiceException",
+                  "Lambda.TooManyRequestsException",
+                  "Lambda.SdkClientException"
+                ],
                 "IntervalSeconds": 3,
                 "MaxAttempts": 3,
                 "BackoffRate": 2.0
@@ -39,7 +47,15 @@
           }
         }
       },
-      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "MarkFailed", "ResultPath": "$.error" }],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "MarkFailed",
+          "ResultPath": "$.error"
+        }
+      ],
       "Next": "Assemble"
     },
     "Assemble": {
@@ -54,8 +70,18 @@
           "frameRecords.$": "$.frameRecords"
         }
       },
-      "ResultSelector": { "Payload.$": "$.Payload" },
-      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "MarkFailed", "ResultPath": "$.error" }],
+      "ResultSelector": {
+        "Payload.$": "$.Payload"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "MarkFailed",
+          "ResultPath": "$.error"
+        }
+      ],
       "End": true
     },
     "MarkFailed": {
@@ -63,12 +89,27 @@
       "Resource": "arn:aws:states:::dynamodb:updateItem",
       "Parameters": {
         "TableName": "floodlens-runs",
-        "Key": { "runId": { "S.$": "$.runId" } },
+        "Key": {
+          "runId": {
+            "S.$": "$.runId"
+          }
+        },
         "UpdateExpression": "SET #s = :s",
-        "ExpressionAttributeNames": { "#s": "status" },
-        "ExpressionAttributeValues": { ":s": { "S": "failed" } }
+        "ExpressionAttributeNames": {
+          "#s": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":s": {
+            "S": "failed"
+          }
+        }
       },
-      "End": true
+      "Next": "RunFailed"
+    },
+    "RunFailed": {
+      "Type": "Fail",
+      "Error": "PipelineFailed",
+      "Cause": "A step failed; see the run record in floodlens-runs and the Lambda logs"
     }
   }
 }

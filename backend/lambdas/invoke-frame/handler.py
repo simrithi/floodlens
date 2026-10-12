@@ -14,7 +14,10 @@ passes alongside it):
     "potholeConfidence": 0.35, "maxWidth": 1920
   }
 
-Output: the SageMaker endpoint's JSON response (one frame record), unchanged.
+Output: a small pointer {"s3Key": ...} to the full per-frame record, which is written to
+s3://<outputBucket>/<outputPrefix>/frame-records/<file>.json. Step Functions caps a state's result at
+256 KB, which a Map over a few hundred frames exceeds if it carries the full records; assemble-results
+reads the records back from S3.
 """
 
 import json
@@ -22,6 +25,7 @@ import json
 import boto3
 
 sm = boto3.client("sagemaker-runtime")
+s3 = boto3.client("s3")
 
 ENDPOINT_NAME = "floodlens-analyze"
 
@@ -44,4 +48,7 @@ def handler(event, context):
         ContentType="application/json",
         Body=json.dumps(body),
     )
-    return json.loads(response["Body"].read())
+    record = json.loads(response["Body"].read())
+    key = f"{event['outputPrefix']}/frame-records/{frame['file']}.json"
+    s3.put_object(Bucket=event["outputBucket"], Key=key, Body=json.dumps(record), ContentType="application/json")
+    return {"s3Key": key}

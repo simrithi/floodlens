@@ -16,6 +16,8 @@ COPY lambdas/assemble-results/handler.py .
 # copies them into /tmp at cold start (Lambda's /tmp is fresh per execution environment --
 # anything baked into /tmp at build time is NOT what the running container sees).
 COPY lambdas/assemble-results/seed-hydro-delhi/ seed/hydro-delhi/
+COPY lambdas/assemble-results/seed-hydro-bengaluru/ seed/hydro-bengaluru/
+COPY lambdas/assemble-results/seed-geo-bengaluru/ seed/geo-bengaluru/
 
 # Lambda's only writable path is /tmp; the DEM tile and rainfall cache land there too.
 ENV FLOODLENS_DATA_DIR=/tmp/data

@@ -42,6 +42,7 @@ import cv2
 from flask import Flask, Response, request
 
 from core.analyze import analyze_frame
+from core.cities import city_for
 from core.elevation import dem
 from core.frames import Frame, load_image
 from core.overlay import render_depth, render_overlay
@@ -108,7 +109,8 @@ def invocations() -> Response:
         _put_jpeg(out_bucket, f"{out_prefix}/depth/{frame.file}", depth_img, quality=80)
     _put_jpeg(out_bucket, f"{out_prefix}/frames/{frame.file}", image[:, :, ::-1])
 
-    elevation_m = dem().elevation(frame.lat, frame.lng)
+    city_key = city_for(frame.lat, frame.lng).key
+    elevation_m = dem(city_key=city_key).elevation(frame.lat, frame.lng)
     record = frame_record(analysis, elevation_m)
     log.info("frame %s done: %d potholes, %d dips", frame.index, len(record["potholes"]), len(record["dips"]))
     return Response(json.dumps(record), mimetype="application/json")
