@@ -24,6 +24,10 @@ The pipeline and AI backend were created by hand with the CLI and the JSON polic
 2. Give the role only what `deploy.sh` needs: `s3:PutObject`, `s3:ListBucket` and `s3:DeleteObject` on the site bucket's `assets/` and root files, and `cloudfront:CreateInvalidation` on the distribution.
 3. In the repository settings, create an environment named `production` and add the variables `AWS_DEPLOY_ROLE_ARN`, `VITE_API_FRAME_CHECK`, `VITE_API_BRIEF` and `VITE_API_ACTIONS`. No secrets are needed.
 
+## Checking the deployment
+
+`bash verify_aws.sh` is a read-only check of every service (live routes, SageMaker, Step Functions, Lambda, EventBridge, SNS, DynamoDB, S3, CloudFront, ECR, alarms, budget). It prints PASS or FAIL for each and changes nothing. Its recorded output is in [`../docs/PROOF.md`](../docs/PROOF.md).
+
 ## Commands
 
 ```bash

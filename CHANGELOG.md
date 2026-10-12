@@ -5,6 +5,7 @@ All notable changes. Dates are when the change landed.
 ## 0.1.0 (2026-10-12) - AWS hackathon submission
 
 ### Added
+- `infra/verify_aws.sh` (read-only proof that every AWS service is live) and `docs/PROOF.md` with its recorded output and the SNS alarm email.
 - LICENSE (Apache-2.0) and NOTICE for the data licences; architecture diagrams (`docs/architecture.md`); `docs/LEARNINGS.md`.
 - `npm run dev:demo`: run the app with no AWS account and no `data/` folder, reading the published results.
 - A manual deploy workflow (needs the one-time setup in `infra/README.md`) and a quieter Dependabot configuration.

@@ -99,6 +99,7 @@ These results are preliminary. They do not show that Varshik predicts every floo
 - [AI used](#ai-used)
 - [What I learned](#what-i-learned)
 - [Tests and verification](#tests-and-verification)
+- [Proof that the AWS services are live](#proof-that-the-aws-services-are-live)
 - [What the results do and do not show](#what-the-results-do-and-do-not-show)
 - [Limitations](#limitations)
 - [Roadmap](#roadmap)
@@ -465,7 +466,7 @@ Guardrails on the two Bedrock models: the frame check is evidence for a person t
 
 - **No automated browser test.** The dashboard, street view, walkthrough and the printable report were exercised by hand and through their data files, not by a test, and there are no front-end unit tests.
 - **No load test.** The rate limits are unit-tested but were not tried under concurrent load.
-- **Alert email delivery.** The SNS subscription is confirmed, but no test message was sent, so delivery has not been observed.
+- **Daily flood-alert email.** SNS delivery is proven by the alarm email in the proof section, but the forecast Lambda's own flood-alert email has not been observed yet.
 - **Security headers.** CloudFront does not add HSTS, `X-Content-Type-Options` or a content security policy. Adding a response-headers policy to the CDK stack is open work.
 - **Brief language quality.** The Hindi brief checks numbers and ids, not fluency, and has not been reviewed by a fluent reader. Kannada was tried and removed.
 - **The scientific results are preliminary.** See "What the results do and do not show".
@@ -482,6 +483,34 @@ The short version; the full list, each tied to the event it came from, is in [`d
 - **Do not ship what I cannot read.** Kannada was removed until a fluent reviewer can check it.
 - **Say the weak numbers.** Terrain alone scored AUC 0.57, and the stretch-level test 0.45, next to 0.66 and 0.69.
 - **Cost shapes the design.** One idle GPU endpoint is about US$0.74 an hour, which is why frames run one at a time.
+
+## Proof that the AWS services are live
+
+Run `bash infra/verify_aws.sh` with access to the account. It is read-only and checks every service below; on 12 October 2026 it passed **40 of 40** (the full output is in [`docs/PROOF.md`](docs/PROOF.md)).
+
+| Service | Live evidence |
+|---|---|
+| SageMaker | `floodlens-analyze` InService (`ml.g4dn.xlarge`); a real inference returned a full frame record |
+| Step Functions | `floodlens-pipeline` active; processed 422 + 133 + 207 frames; a forced failure ends FAILED |
+| Lambda | 9 of 9 functions Active; 3 public Function URLs |
+| Bedrock | Fresh frame checks on 6 of 6 spots and 4 of 4 briefs passed (Nova Lite, Nova Pro) |
+| EventBridge | Frames-uploaded rule enabled; Scheduler `cron(0 17 * * ? *)` Asia/Kolkata |
+| SNS | Email subscription confirmed; an alarm email was delivered (below) |
+| DynamoDB | `floodlens-runs` and `FloodLensActions` ACTIVE |
+| Systems Manager | Officer passcode stored as a SecureString; wrong passcodes refused (401) |
+| S3 and CloudFront | 3 private buckets; distribution deployed; app routes and 42 analysis files return 200 |
+| ECR, CloudWatch, Budgets | Images present; 10 alarms (none firing), 14-day logs; US$25 budget |
+
+### The SNS email, as received
+
+The SNS topic `floodlens-alerts` has a confirmed email subscription. To prove the path from AWS to an inbox, I ran a pipeline execution that was made to fail on purpose; the alarm fired and AWS sent this email:
+
+> **ALARM: "floodlens-invoke-frame-errors" in US East (N. Virginia)**
+> From: AWS Notifications `<no-reply@sns.amazonaws.com>`, received 5:24 AM IST (23:54:53 UTC, 11 October 2026)
+> *You are receiving this email because your Amazon CloudWatch Alarm "floodlens-invoke-frame-errors" in the US East (N. Virginia) region has entered the ALARM state, because "Threshold Crossed: 1 datapoint [1.0 (11/10/26 23:49:00)] was greater than or equal to the threshold (1.0)."*
+> State change: OK -> ALARM. Metric: `AWS/Lambda` `Errors`, `FunctionName = floodlens-invoke-frame`, Sum over 300 seconds, missing data not breaching. Alarm action: `arn:aws:sns:us-east-1:<account>:floodlens-alerts`.
+
+The daily flood-alert email (the forecast Lambda's own message) has not yet been observed: it runs at 17:00 IST and only sends when tomorrow's forecast reaches 5 cm at a spot.
 
 ## What the results do and do not show
 
