@@ -40,3 +40,11 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Step Functions replay payloads and run records (scratch, regenerate from frames.json)
+backend/lambdas/run-input-*.json
+backend/lambdas/ddb-item-*.json
+
+# Videos and voice-over assets live outside the repo (link from the README instead)
+*.mp4
+vo/

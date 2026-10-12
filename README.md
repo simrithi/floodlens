@@ -1,27 +1,102 @@
+<p align="center"><img src="docs/logo.svg" alt="Varshik logo: a raindrop with a road running into it" width="96"></p>
+
 # Varshik
-### Geospatial intelligence for identifying urban waterlogging hotspots
 
-Varshik is a geospatial decision-support system designed to help identify road locations that may be vulnerable to urban waterlogging. It brings together road-level visual evidence, phone-sensor observations, terrain elevation, drainage infrastructure, and analytical outputs in a map-based interface for Delhi and Bengaluru.
+**Flood-risk analysis that finds the roads likely to hold water before the rain arrives, and shows engineers why.**
 
-The engineering challenge is not simply to plot potential flood locations. It is to connect heterogeneous datasets while preserving the distinction between observed evidence, mapped infrastructure, model-derived estimates, AI-generated interpretations, and conditions that still require field verification.
+[![Python](https://img.shields.io/badge/python-3.12-3776ab)](backend/requirements.txt)
+[![React](https://img.shields.io/badge/React-19-61dafb)](ui/package.json)
+[![Built on AWS](https://img.shields.io/badge/built%20on-AWS-ff9900)](#aws-architecture)
+[![CDK](https://img.shields.io/badge/AWS%20CDK-web%20stack-232f3e)](infra/)
+[![Status](https://img.shields.io/badge/validation-preliminary-orange)](#validation)
+
+**[Live demo](https://d24wvc44c3vaxz.cloudfront.net/)** · **[Demo video](https://youtu.be/R2T2AnE9TvM)** · **[AWS notes](docs/AWS_SUBMISSION.md)** · **[Architecture diagrams](docs/diagrams/)**
+
+Three deep-learning models (SegFormer-B2, Depth Anything V2, YOLOv8m-seg) run on one Amazon SageMaker GPU endpoint. Their output is fused with smartphone road-height profiles, Copernicus GLO-30 / FABDEM terrain and a water-balance model to estimate standing-water depth under 2-, 5- and 10-year storms, for Delhi and Bengaluru.
+
+Varshik started from a personal place: growing up in Tamil Nadu, the author saw what floods do to families and lost friends to them. The question behind the project is simple: what if we could see which roads will flood *before* it rains?
 
 > **Project status:** Varshik combines a Python-based geospatial analytical pipeline, a React/TypeScript mapping interface, and AWS-backed delivery and event-driven capabilities. The AI-assisted inspection, multilingual briefing, rainfall-analysis, notification, and field-observation workflows described below are implemented. Their outputs remain decision-support signals and must not be treated as authoritative flood warnings or substitutes for verified field conditions.
 
+## Try it in two minutes
+
+The quickest look is the [live demo](https://d24wvc44c3vaxz.cloudfront.net/). To run things locally, note that `data/` (frames, models, analysis outputs) is gitignored, so the commands below need those files in place first.
+
+```bash
+# the web app (set VITE_ANALYSIS_BASE to where the analysis outputs are served)
+cd ui && npm install && npm run dev
+
+# re-score a survey locally from an existing analysis.json (no neural networks, no GPU)
+cd backend && python run_local.py --rescore
+
+# reproduce the Delhi hotspot validation
+cd backend && python run_validate.py
+
+# run the full vision pipeline on a few frames (needs the downloaded models, see scripts/download_assets.py)
+cd backend && python run_local.py --segments minto --limit 10
+
+# infrastructure tests
+cd infra && npm install && npm test
+
+# publish the web app (build, upload, cache invalidation)
+bash infra/deploy.sh
+```
+
+## What it does, on one road
+
+1. A phone rides a road and records dashcam frames, GPS and tilt.
+2. Each frame goes to the SageMaker endpoint, which returns road regions (SegFormer-B2), relative depth (Depth Anything V2) and potholes (YOLOv8m-seg).
+3. Tilt plus distance becomes a **road-height profile** that can reveal underpasses and sags that a 30 m satellite model cannot see.
+4. Terrain from the AWS Registry of Open Data (Copernicus GLO-30, FABDEM) and flow routing with pysheds place each segment in its catchment.
+5. A water-balance model estimates standing-water depth per ~60 m segment for 2-, 5- and 10-year storms, and the drainage flow that might be needed.
+6. The app shows the result as a 3D heatmap with flow lines, and Bedrock (Amazon Nova Lite) writes the plain-language brief an officer can act on.
+
+## Validation
+
+| Evaluation | Result | Reproduce |
+|---|---|---|
+| Underpass identification, 45 km of Bengaluru ORR | AUC **0.69** with phone road profiles vs **0.47** (chance) for satellite elevation | [`backend/core/roadprofile.py`](backend/core/roadprofile.py), [`reference_bengaluru.geo.json`](backend/validation/reference_bengaluru.geo.json) |
+| Kadubeesanahalli underpass | Flagged on both driving directions; reported waterlogged by traffic police, June 2023 | [`ui/src/data/surveys.ts`](ui/src/data/surveys.ts) |
+| Synthetic road-dip test | **11 / 11** planted 8 cm dips found; 3 cm dips are not, by design | [`backend/scripts/test_dip_sensitivity.py`](backend/scripts/test_dip_sensitivity.py) |
+| Delhi hotspots | AUC **0.66** (95% CI 0.60 to 0.72), 36 reported hotspots vs 400 random main-road points | [`backend/run_validate.py`](backend/run_validate.py), [`reference_hotspots.geo.json`](backend/validation/reference_hotspots.geo.json) |
+
+These results are preliminary. They do not show that Varshik predicts every flood or generalises to every city. See [Limitations](#limitations).
+
+## Repository map
+
+| Path | What is in it |
+|---|---|
+| [`backend/core/`](backend/core/) | Analysis pipeline: segmentation, depth, detection, geometry, road profile, terrain, hydrology, water depth, scoring |
+| [`backend/serve/`](backend/serve/) | SageMaker serving container (`/ping`, `/invocations`) wrapping the three models |
+| [`backend/lambdas/`](backend/lambdas/) | Step Functions workers (`invoke-frame`, `assemble-results`, ...), Bedrock functions (`frame-check`, `officer-brief`), `forecast`, `actions` |
+| [`backend/scripts/`](backend/scripts/) | Data fetch, hydrology and export scripts, dip-sensitivity test |
+| [`backend/validation/`](backend/validation/) | Reference hotspot and underpass data |
+| [`infra/`](infra/) | AWS CDK v2 (TypeScript) stack and tests |
+| [`ui/`](ui/) | React 19, TypeScript, Vite, MapLibre front end |
+| [`docs/`](docs/) | Architecture diagrams, tables, and the project article |
+
 ## Contents
 
+- [Try it in two minutes](#try-it-in-two-minutes)
+- [What it does, on one road](#what-it-does-on-one-road)
+- [Validation](#validation)
+- [Repository map](#repository-map)
 - [What Varshik does](#what-varshik-does)
 - [System overview](#system-overview)
 - [Architecture](#architecture)
 - [Data and analytical pipeline](#data-and-analytical-pipeline)
 - [Frontend](#frontend)
 - [AWS architecture](#aws-architecture)
-- [Amazon SageMaker inference and terrain analysis](#amazon-sagemaker-inference-and-terrain-analysis)
+- [Amazon SageMaker inference](#amazon-sagemaker-inference)
 - [AI and event-driven capabilities](#ai-and-event-driven-capabilities)
 - [Data contracts and output layout](#data-contracts-and-output-layout)
 - [Local development](#local-development)
 - [Configuration](#configuration)
 - [Security and operational controls](#security-and-operational-controls)
 - [Data provenance and licensing](#data-provenance-and-licensing)
+- [AI used](#ai-used)
+- [Tests and verification](#tests-and-verification)
+- [What the results do and do not show](#what-the-results-do-and-do-not-show)
 - [Limitations](#limitations)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -54,7 +129,7 @@ The pipeline and frontend have separate responsibilities:
 2. The **output layer** exposes structured JSON, GeoJSON, images, and depth-related files.
 3. The **frontend** requests the required artefacts over HTTP and renders them as maps, reports, and visual evidence.
 4. The **cloud delivery layer**, serves the built frontend and approved analysis artefacts through Amazon S3 and Amazon CloudFront.
-5. The serverless capabilities operate alongside the analytical pipeline while preserving the boundary between model estimates and verified observations. Amazon SageMaker provides a real-time inference endpoint for the project's deployed model and supports the model-inference workflow used alongside geospatial and terrain analysis.
+5. The serverless capabilities operate alongside the analytical pipeline while preserving the boundary between model estimates and verified observations. Amazon SageMaker provides a real-time GPU endpoint that serves the three computer-vision models (SegFormer-B2, Depth Anything V2, YOLOv8m-seg) used in the per-frame analysis.
 
 ## Architecture
 
@@ -139,220 +214,108 @@ The frontend build and analysis artefacts are deployed with an explicit path con
 
 ## AWS architecture
 
-The AWS architecture delivers the application and its analytical artefacts securely and runs event-driven extensions for visual evidence inspection, multilingual briefs, rainfall analysis, notifications, and field observations.
+Everything below is deployed in `us-east-1` and in use.
 
-### AWS service map
+| Service | What it does here |
+|---|---|
+| AWS Registry of Open Data | Source of the Copernicus GLO-30 elevation model |
+| Amazon SageMaker | One real-time GPU endpoint (`ml.g4dn.xlarge`) serving SegFormer-B2, Depth Anything V2 and YOLOv8m-seg |
+| AWS Step Functions | `floodlens-pipeline`: a serial Map over a survey's frames (the endpoint is a single worker), then an assemble step; a failure ends in a Fail state |
+| Amazon EventBridge | A rule starts the pipeline when a survey's `frames.json` lands in the raw bucket; Scheduler runs the daily forecast at 17:00 IST |
+| AWS Lambda | Nine functions: start-run, get-upload-url, get-run-status, invoke-frame, assemble-results, frame-check, officer-brief, forecast, actions |
+| Lambda Function URLs | Three used by the app: frame check, brief, officer log. The upload and run-status URLs exist but return 403 and are not used |
+| Amazon Bedrock | Amazon Nova Lite (frame check, English brief) and Amazon Nova Pro (Hindi brief) |
+| Amazon S3 | Raw footage, analysis outputs, and the site bucket behind CloudFront |
+| Amazon CloudFront | HTTPS delivery of the app and its analysis files |
+| AWS CDK v2 (TypeScript) | The web stack only: site bucket and CloudFront (see below) |
+| Amazon SNS | The daily alert email |
+| Amazon DynamoDB | `floodlens-runs` (pipeline runs) and `FloodLensActions` (officer approvals and ground reports) |
+| AWS Systems Manager Parameter Store | The officer passcode, as a SecureString |
+| Amazon ECR | Container images for the SageMaker server and the assemble Lambda |
+| Amazon CloudWatch | Lambda logs (14-day retention), error alarms, a Bedrock throttling alarm |
+| AWS Budgets | A US$25 monthly budget with alerts at 50%, 80% and 100% |
+| AWS IAM | One role each for SageMaker, Step Functions and the scheduler; one shared role for the nine Lambdas |
 
-| Service or technology | Responsibility | Status |
+### Amazon S3 and Amazon CloudFront
+
+Three buckets: `floodlens-raw-...` (uploaded footage), `floodlens-outputs-...` (pipeline outputs, frame records, cached AI results) and the site bucket. The site bucket holds the built app at its root and the analysis files under `analysis/`. It is private, with all public access blocked and server-side encryption, and CloudFront reaches it through Origin Access Control. The distribution uses HTTPS only, HTTP/2 and 3, and compression.
+
+Client-side routes such as `/map` and `/report/bengaluru` are rewritten to `/index.html` by a CloudFront Function on the viewer-request event. There are deliberately no 403 or 404 error-page rewrites, so a missing analysis file stays a visible error instead of turning into the app shell.
+
+| Content | Cache |
+|---|---|
+| `index.html` | No cache |
+| Hashed assets | One year, immutable |
+| JSON and GeoJSON analysis | Five minutes |
+| Analysis images | One day |
+
+Raw footage and rasters are never uploaded to the site bucket. A finished survey is published with [`backend/scripts/publish_site.sh`](backend/scripts/publish_site.sh).
+
+### AWS CDK
+
+CDK defines one stack, `FloodLensWeb`: the site bucket, the CloudFront distribution, the routing function, the cache policies and a `Project=FloodLens` tag, with five tests in [`infra/test/`](infra/test/). Everything else (SageMaker, Step Functions, the Lambdas, DynamoDB, SNS, EventBridge, ECR, IAM) was created with the AWS CLI and the JSON files in [`backend/lambdas/`](backend/lambdas/), and those resources are not tagged. Moving them into CDK is open work.
+
+## Amazon SageMaker inference
+
+Varshik runs its computer-vision analysis on **Amazon SageMaker** through a single **real-time endpoint** (`floodlens-analyze`, one production variant on `ml.g4dn.xlarge`, one instance). The serving container ([backend/serve/](backend/serve/)) loads three deep-learning models and runs them on each dashcam frame:
+
+| Model | Task | Role |
 |---|---|---|
-| AWS Registry of Open Data | Access to public geospatial input data, including Copernicus GLO-30 DEM | Used as a data source in the project workflow |
-| Amazon S3 | Store built frontend assets and approved analysis artefacts | Implemented delivery layer |
-| Amazon CloudFront | HTTPS content delivery for frontend and analysis requests | Implemented delivery layer |
-| AWS CDK v2 with TypeScript | Define and review infrastructure as code | Implemented as infrastructure as code in the infrastructure directory |
-| AWS Lambda | Serverless execution for visual checks, forecast analysis, and field-action APIs | Implemented |
-| Amazon Bedrock | Vision-based frame inspection and grounded officer briefs | Implemented |
-| Amazon SageMaker | Hosts the deployed model behind a real-time inference endpoint used for model predictions supporting geospatial and terrain analysis | Implemented |
-| Amazon EventBridge Scheduler | Invoke the rainfall-analysis workflow on a schedule | Implemented |
-| Amazon SNS | Send forecast notifications | Implemented |
-| Amazon DynamoDB | Store officer actions and field observations | Implemented |
-| Amazon CloudWatch | Logs, metrics, alarms, and operational visibility | Implemented for configured workloads |
-
-### Amazon S3: object storage
-
-The deployment places the built frontend at the root of a private S3 bucket and the application's analysis artefacts under the `analysis/` prefix.
-
-S3 is an object store. Keys may look like directories, but they are not conventional filesystem directories. The application should rely on stable object-key conventions rather than filesystem assumptions.
-
-The bucket controls include:
-
-- S3 Block Public Access.
-- Server-side encryption.
-- A bucket policy that grants the required access to CloudFront.
-- A clear separation between frontend assets and analysis objects.
-- Uploading only the files needed by the application.
-
-Raw input data should not be uploaded automatically simply because it exists in the development repository. The deployment must respect source-data licensing and project-specific exclusions.
-
-### Amazon CloudFront and Origin Access Control
-
-The CloudFront distribution serves the frontend and analysis artefacts over HTTPS while using **Origin Access Control (OAC)** to access the private S3 origin. The bucket does not need to be publicly readable.
-
-The delivery configuration enables HTTP/2 and HTTP/3, compression, and a price class that covers India.
-
-#### Single-page application routing
-
-Client-side routes such as `/map` and `/report/bengaluru` may reach CloudFront as direct URL requests. Without a rewrite, S3 may look for an object with that literal key and return an error.
-
-The implemented solution is a CloudFront Function on the viewer-request event that rewrites eligible extensionless application routes to `/index.html`.
-
-This rewrite must be selective. It must not turn every missing JSON, GeoJSON, image, or analysis object into `index.html`, because doing so would hide missing-data errors and make debugging difficult.
-
-#### Cache policy
-
-Different objects have different freshness requirements. The implemented configuration uses separate caching behaviour:
-
-| Content type | Implemented cache behaviour | Reason |
-|---|---|---|
-| `index.html` | No-cache / revalidation | Users should receive the current application entry point |
-| Hashed frontend assets | One year, immutable | Content-addressed filenames change when the asset changes |
-| JSON and GeoJSON analysis | Five minutes | Balances delivery efficiency with update visibility |
-| Analysis images | One day | Reduces repeated image delivery while allowing periodic refresh |
-
-GeoJSON should be served with the `application/geo+json` content type. JSON should use an appropriate JSON content type.
-
-These cache settings should be checked against the deployed distribution when changing delivery behaviour.
-
-### AWS CDK and infrastructure as code
-
-AWS CDK v2 infrastructure is maintained in an `infra/` directory and uses TypeScript. CDK describes resources in code and synthesises them into AWS CloudFormation templates.
-
-The infrastructure design follows these principles:
-
-- **Reproducibility:** infrastructure is defined in source rather than created only through manual console steps.
-- **Reviewability:** resource and permission changes can be inspected before deployment.
-- **Least privilege:** roles and policies grant only the permissions required for each task.
-- **Traceability:** resources should carry the `Project=Varshik` tag where supported.
-- **Cost awareness:** potentially expensive or public resources should be deliberately approved before creation.
-
-The default region for regional resources is `ap-south-1` (Mumbai). CloudFront is global. If a custom domain is configured for CloudFront, its ACM certificate must be provisioned in `us-east-1`.
-
-## Amazon SageMaker inference and terrain analysis
-
-Varshik uses **Amazon SageMaker** for model inference through a deployed **real-time endpoint**. This is a distinct part of the architecture from Amazon Bedrock: SageMaker serves the project's deployed predictive model, while Bedrock is used for foundation-model tasks such as visual evidence descriptions and grounded multilingual briefs.
-
-The SageMaker workflow supports inference associated with Varshik's geospatial and terrain-analysis process. The analytical pipeline prepares the relevant inputs, sends an inference request to the deployed endpoint, and uses the returned prediction as one input to the wider decision-support workflow. The result should remain traceable to its input features and model version where those details are available.
+| SegFormer-B2 (Cityscapes fine-tuned) | Semantic segmentation | Road, footpath, kerb and vehicle regions |
+| Depth Anything V2 (Small) | Monocular depth estimation | Relative surface geometry; not calibrated elevation |
+| YOLOv8m-seg | Instance segmentation | Potholes and surface defects |
 
 ### Inference flow
 
-1. **Prepare inputs:** the analysis workflow assembles the geospatial or terrain-derived features expected by the deployed model.
-2. **Invoke the endpoint:** the application or backend calls the SageMaker real-time endpoint using authorised AWS credentials and the expected request schema.
-3. **Validate the response:** check that the response is well-formed, contains the expected fields, and has valid numeric values before using it downstream.
-4. **Integrate the prediction:** combine the model output with the other relevant spatial findings and evidence; do not treat the prediction as a verified field measurement.
-5. **Monitor and evaluate:** track endpoint errors, latency, throttling, model version, and prediction quality against reliable field observations where available.
+1. **Orchestrate:** a Step Functions Map state iterates over the frames of a survey and calls the `invoke-frame` Lambda once per frame.
+2. **Invoke the endpoint:** the Lambda sends a JSON request (`image_s3_uri`, frame metadata, pothole confidence, output location) to `floodlens-analyze` using `sagemaker-runtime`.
+3. **Analyse the frame:** the container downloads the image from S3, runs segmentation, depth estimation and pothole detection, and applies the geometry and DEM lookup.
+4. **Write outputs:** overlay and depth images go to the outputs bucket, the full record is saved to `frame-records/`, and the Lambda returns a small pointer. Step Functions limits a state to 256 KB, which a Map over a few hundred frames would exceed.
+5. **Assemble:** the `assemble-results` Lambda reads the records back and combines them with the road profile, terrain, drains and the water model into `analysis.json`.
 
-| SageMaker component | Role in Varshik | Engineering consideration |
-|---|---|---|
-| Deployed model | Produces predictions from the features supplied by the geospatial/terrain workflow | Document the model type, feature schema, and version used in the actual deployment. |
-| Real-time inference endpoint | Serves online inference requests | Endpoint availability, latency, invocation permissions, and cost depend on the deployed configuration. |
-| Request/response contract | Defines how the backend sends features and consumes predictions | Validate inputs and outputs; handle timeouts, errors, and unexpected responses explicitly. |
-| Prediction integration | Makes model outputs available to the wider analysis and mapping workflow | Label predictions as model-derived estimates and retain their provenance. |
-
-The exact model algorithm, endpoint name, instance type, feature list, and prediction fields are intentionally not specified here because they should match the deployed SageMaker configuration rather than be guessed in documentation.
+The endpoint implements the standard SageMaker custom-container contract (`GET /ping`, `POST /invocations`). Relative depth is never treated as a survey, and no model output is a verified field measurement.
 
 ## AI and event-driven capabilities
-
-The following implemented workflows connect image-based evidence review, grounded reporting, scheduled rainfall analysis, notifications, and field feedback. The safeguards described here are part of the intended runtime behaviour; deployment-specific values should remain aligned with the active AWS configuration.
 
 ![Varshik AI and event-driven workflows](docs/diagrams/Varshik_AI_Event_Workflows.svg)
 
 *Figure 3. Event-driven workflows for visual inspection, rainfall analysis, notifications, and field observations.*
 
-### 1. Amazon Bedrock for visual evidence inspection
+### 1. Frame check (Amazon Bedrock, Nova Lite)
 
-The frame-check workflow uses a Python 3.12 Lambda function to accept a city and spot identifier, retrieve the relevant findings and original dashcam frames from S3, and invoke a vision-capable Amazon Bedrock model through the Converse API. This is separate from the SageMaker real-time endpoint used for the project's predictive model inference.
+The `frame-check` Lambda takes a city and spot id, reads the spot's best dashcam frame and up to three more from its stretches, and asks Nova Lite through the Converse API for a fixed JSON answer: whether it is an underpass, whether a drain inlet is visible, its condition, any blockage (garbage, silt, vegetation, parked vehicle), standing water or staining, and visible kerb openings. The prompt tells the model to answer `unclear` instead of guessing. The reply is validated against the schema with one retry; if it still fails, an error is returned, not malformed data.
 
-The model's scope is intentionally narrow: describe visible evidence rather than independently determine flood depth or replace the hydrological analysis.
+The result is evidence for an engineer to verify. It is never an input to the water model or any score, and the app labels it that way. It is cached at `analysis/checks/<city>/<spotId>.json` with the model id and time, and also copied to the site bucket. At most 30 fresh checks run per hour overall, counted in a small S3 object; cached results do not count.
 
-The structured response includes fields for:
+### 2. Officer brief (Bedrock, Nova Lite and Nova Pro)
 
-- Whether the location appears to be an underpass.
-- Whether a drainage inlet is visible.
-- The apparent inlet condition.
-- Visible blockage categories, such as garbage, silt, vegetation, or a parked vehicle.
-- Whether standing water or water staining is visible.
-- Whether kerb openings are visible.
-- Notes and the frame identifiers used.
+The `officer-brief` Lambda writes a one-page brief in English (Nova Lite) or Hindi (Nova Pro) from the findings. The model sees only the spots and headline facts, refers to each spot only by its id, and never writes a place name; code adds a legend with the exact names. The output is rejected unless every number appears in the findings (Latin and Devanagari digits both count) and every spot id is present, with up to three attempts. Briefs are cached by city and language with the model id and a hash of the findings, so they regenerate only when the findings change. At most 20 fresh briefs run per hour overall.
 
-The model returns `unclear` when the image does not support a confident conclusion. An inlet outside the camera's field of view must not automatically be labelled blocked.
+The check proves numbers and ids, not fluency or that a number sits next to the right place. The Hindi brief is machine-written and has not been reviewed by a fluent reader. Kannada was offered earlier and removed until it can be reviewed (see Future scope).
 
-#### Validation and caching
+### 3. Daily forecast (EventBridge Scheduler and Lambda)
 
-The implementation validates the model response against a defined JSON schema. Invalid output triggers one controlled retry; if validation still fails, the endpoint returns an explicit error rather than passing malformed data to the UI.
+At 17:00 IST the `forecast` Lambda reads each city's findings, fetches the next day's hourly rain at each spot from Open-Meteo, and interpolates the spot's own depth-versus-rain curve from `analysis.json`. Values beyond the curve are clamped to its end, not extrapolated.
 
-Results are cached in S3 under:
+The curves are built from 15-minute design storms and Open-Meteo gives hourly totals. There is no sourced conversion, so the hourly value is used as it is, and every alert says: "hourly rain used as-is; 15-minute burst not modelled".
 
-```text
-analysis/checks/<city>/<spotId>.json
-```
+Advisories are project-defined, not safety standards:
 
-The cache record includes the model identifier and timestamp. The workflow enforces a limit of 30 calls per hour. The shared DynamoDB-backed rate limiter applies the limit across Lambda execution environments, rather than relying on a process-local counter.
-
-| Cache field / control | Purpose |
+| Expected depth at a flagged spot | Action in the alert |
 |---|---|
-| City and spot ID | Identifies the cached inspection result. |
-| Model identifier | Makes the generating model traceable. |
-| Timestamp | Records when the result was produced. |
-| Shared DynamoDB rate limiter | Enforces the hourly request limit across Lambda execution environments. |
-| Schema validation and one retry | Prevents malformed model output from being passed to the UI. |
+| 15 cm or more | Consider closing |
+| 5 cm to below 15 cm | Clear inlets, watch |
+| Below 5 cm | Not included |
 
-AI output is an interpretation of images, not a confirmed field inspection. The interface labels it accordingly and retains the ability for an engineer to verify the location on site.
+### 4. Alert email (Amazon SNS)
 
-### 2. Grounded, multilingual officer briefs
+When any spot reaches 5 cm, one message per city per day is published to the `floodlens-alerts` topic: spot ids, forecast rain, expected depth and action, with a link to the map. The alert file `analysis/alerts/<city>-<date>.json` is written first and a re-run finds it and does nothing, so a retry cannot send a second email. Email recipients must confirm their subscription.
 
-The Bedrock briefing workflow generates a one-page city brief in English, Kannada, or Hindi from the structured findings JSON.
+### 5. Officer log (DynamoDB)
 
-The model is instructed to summarise the locations of concern, explain the causes stated in the source findings, and preserve spot identifiers and units. It must not invent numerical values absent from the input.
+The `actions` Lambda stores two kinds of record in `FloodLensActions` (partition key `city#spotId`, sort key `timestamp#kind`): an officer's approval or decline of a suggested action, and a ground report of whether a spot flooded, with an optional depth. Writes need a shared officer passcode kept in Systems Manager Parameter Store as a SecureString at `/floodlens/officer-passcode`; writes are refused until it is set, and the passcode is never logged. Reading the log needs no passcode.
 
-Post-generation validation extracts numbers from the output and checks them against the source data, accounting for common formatting differences and Kannada or Devanagari digits. If unsupported numbers are found, the function retries once and then fails closed if the result remains invalid.
-
-Numerical presence alone does not guarantee correctness: a value can still be associated with the wrong location or unit. The brief should preserve the relationships between values, identifiers, units, and source records. Kannada and Hindi output should receive human review before operational use.
-
-Generated briefs are cached by city and language with the model identifier, timestamp, and input hash, so changes to source findings can invalidate stale output.
-
-### 3. Scheduled rainfall analysis
-
-The forecasting workflow uses Amazon EventBridge Scheduler to invoke a Lambda function daily at **17:00 India Standard Time**.
-
-The function retrieves city findings and spot coordinates, queries the Open-Meteo hourly precipitation forecast, and compares forecast rainfall with existing water-depth-versus-rainfall curves.
-
-A critical modelling constraint is the difference between hourly precipitation and a short-duration design storm. Hourly rainfall must not be silently treated as a 15-minute burst. The project specification calls for a sourced, city-specific conversion ratio when one is available. Otherwise, the output must explicitly say that hourly rain is used and the short-duration burst is not modelled.
-
-For rainfall values between known curve points, linear interpolation can be used:
-
-\[
-d(r)=d_1+\frac{r-r_1}{r_2-r_1}(d_2-d_1)
-\]
-
-Here, \(r\) is rainfall intensity and \(d\) is estimated depth. This is an interpolation method, not proof that the hydrological relationship is linear under all conditions. Out-of-range values, missing points, and unsupported extrapolation require explicit handling.
-
-The implemented advisory thresholds are:
-
-- **15 cm or more** at an underpass or low-lying sag: consider closing the location.
-- **5 cm to below 15 cm:** clear inlets and monitor the location.
-
-These are project-defined decision-support rules, not universal flood-safety standards. They must not independently trigger road closures or replace official emergency procedures.
-
-| Estimated depth / data condition | Project advisory | Qualification |
-|---|---|---|
-| 15 cm or more at an underpass or low-lying sag | Consider closing the location | Project-defined advisory; verify with responsible authorities and field conditions. |
-| 5 cm to below 15 cm | Clear inlets and monitor the location | Not a universal flood-safety standard. |
-| Missing or out-of-range curve data | Report uncertainty; avoid unsupported extrapolation | Do not invent estimates unsupported by input data. |
-| Hourly rainfall without a validated conversion ratio | Explicitly disclose that hourly rain is used and short-duration burst rainfall is not modelled | Do not silently treat hourly precipitation as a 15-minute burst. |
-
-### 4. Amazon SNS notifications
-
-The workflow publishes a consolidated daily city summary to Amazon SNS when at least one location meets the specified threshold. The workflow emits a consolidated message per city per day to reduce alert fatigue.
-
-The summary includes affected spot identifiers, forecast information, suggested actions, and a link to the map. Email recipients must confirm their SNS subscription.
-
-Because scheduled jobs can be retried, duplicate suppression needs explicit state management. A retry must not automatically result in another notification for the same city and date.
-
-### 5. DynamoDB for officer actions and field observations
-
-The DynamoDB table is named `VarshikActions`. Its key design is:
-
-- Partition key: `city#spotId`
-- Sort key: `timestamp#kind`
-
-The table records approval or decline decisions and field observations such as whether flooding occurred, an optional reported depth, an observation date, and an optional photo reference.
-
-The implementation accounts for timestamp precision and unique event identifiers. Secondary indexes should be added only when required by verified query patterns.
-
-The API uses Lambda and a Function URL, with strict input validation and an officer secret stored in AWS Secrets Manager or Systems Manager Parameter Store as a SecureString. Secrets must never be embedded in frontend code or printed in logs.
-
-The current shared-secret approach is a constrained prototype control, not a substitute for individual identity, fine-grained authorisation, or per-user auditability. A production operational deployment should use an appropriate identity system.
-
-Field observations can be compared with model outputs using metrics such as flood-detection hit rate and depth error. Those metrics are meaningful only when the ground-truth observations are sufficiently reliable and representative.
+The shared passcode is a prototype control. It gives no individual identity or per-user audit trail. [`backend/scripts/compare_observations.py`](backend/scripts/compare_observations.py) compares the ground reports with the 2-year-storm prediction, which is only meaningful on a day of heavy rain.
 
 ## Data contracts and output layout
 
@@ -398,91 +361,43 @@ Consumers should treat these files as external data: validate expected fields, h
 
 ## Local development
 
-### Prerequisites
-
-- Python 3.12
-- `uv`
-- Node.js compatible with the repository's Vite toolchain
-- The project repository and its required input data
-
-### Backend environment
-
-The backend uses a `uv`-managed environment at `backend/.venv`. Create the environment with:
+Prerequisites: Python 3.12, `uv`, Node.js 22, and the project's `data/` folder (footage, rasters, outputs), which is git-ignored.
 
 ```bash
-uv venv backend/.venv
+# backend
+uv venv backend/.venv && uv pip install -r backend/requirements.txt pytest
+cd backend && python -m pytest tests          # Lambda logic and scripts; no AWS or GPU needed
+
+# web app (set VITE_ANALYSIS_BASE if the analysis files are served from elsewhere)
+cd ui && npm install && npm run dev
+
+# infrastructure
+cd infra && npm install && npm test
 ```
 
-Install backend dependencies using the repository manifest, then run the analysis command documented for the dataset you intend to process.
+More commands (running the pipeline, validation, map layers, publishing a survey) are in [`backend/README.md`](backend/README.md).
 
-### Frontend
-
-The UI is a Vite application built with React and TypeScript. Install dependencies using the repository's package manager and follow its existing development/build scripts. Configure `VITE_ANALYSIS_BASE` to point at the HTTP location from which the generated analysis artefacts are served.
-
-> **Reproducibility note:** Use the exact backend and frontend scripts in the checked-in manifests. This README avoids inventing commands that may not match the current repository.
-
-### Verify the application
-
-After the backend outputs and frontend are available, check the following:
-
-- `/` loads the application.
-- `/map` loads the map view.
-- `/report/bengaluru` and `/report/delhi` load their city reports.
-- The browser can retrieve the expected JSON and GeoJSON analysis resources.
-- Frames and overlays load for sequences that contain them.
-- Switching surveys does not leave stale data on the map.
-- Export/report actions work where implemented.
-- Missing analysis objects produce visible, diagnosable errors rather than silently returning the application shell.
+To check a deployment, open `/`, `/map`, `/report/delhi` and `/report/bengaluru`, switch between the three surveys, and open street view on a spot. A missing optional layer file hides that layer; a missing `analysis.json` shows "No pipeline output yet".
 
 ## Configuration
 
-| Variable or setting | Purpose |
+| Setting | Purpose |
 |---|---|
-| `VITE_ANALYSIS_BASE` | HTTP base path for analysis artefacts; defaults to `/analysis` |
-| AWS region | `ap-south-1` is the documented default for regional AWS resources |
-| `Project=Varshik` | Resource tag specified for supported AWS resources |
-| `analysis/checks/<city>/<spotId>.json` | S3 key pattern for cached frame-inspection results |
-| `VarshikActions` | DynamoDB table for officer decisions and field observations |
-| `city#spotId` | DynamoDB partition-key format |
-| `timestamp#kind` | DynamoDB sort-key format |
+| `VITE_ANALYSIS_BASE` | Where the analysis files are served from (default `/analysis`) |
+| `VITE_API_FRAME_CHECK`, `VITE_API_BRIEF`, `VITE_API_ACTIONS` | The Function URLs for the frame check, officer brief and officer log. Each feature is hidden when its URL is not set |
+| `/floodlens/officer-passcode` | SSM SecureString holding the officer passcode |
+| Region | `us-east-1` |
 
-Do not put credentials, secret values, or privileged access tokens in frontend environment variables. Anything bundled into a client-side application can be inspected by users.
-
-If a custom domain is added to CloudFront, use a certificate in `us-east-1` and complete DNS validation. A custom domain is optional and should only be configured when the domain is available and authorised for use.
+Never put credentials or the officer passcode in frontend variables. Everything bundled into the app can be read by its users.
 
 ## Security and operational controls
 
-Cloud resources use explicit trust boundaries. The controls below describe the implementation and operational posture; confirm exact values against the deployed AWS account before changing or auditing the environment.
-
-### Storage and delivery
-
-- Keep the S3 origin private and use CloudFront OAC.
-- Enable S3 Block Public Access and server-side encryption.
-- Upload only approved frontend assets and analysis outputs.
-- Preserve source-data attribution and licensing requirements.
-- Use content-specific caching and verify the behaviour of missing objects.
-
-### IAM and serverless APIs
-
-- Grant each Lambda function only the permissions required for its responsibility.
-- Scope S3 permissions to the required prefixes where possible.
-- Restrict model invocation to the intended Bedrock model.
-- Validate request bodies, identifiers, and allowed values.
-- Apply authentication and server-side rate limiting to public endpoints.
-- Treat CORS as a browser policy, not as authentication.
-- Never log credentials or sensitive payloads.
-
-### Monitoring and budget controls
-
-The configured operational targets include:
-
-- CloudWatch log retention of 14 days for Lambda functions.
-- Alarms for Lambda errors and Bedrock throttling.
-- An AWS Budget threshold of $25 per month with alerts at 50%, 80%, and 100%.
-
-AWS Budgets alerts do not automatically stop all resource usage. Caching, throttling, usage monitoring, and teardown procedures are still necessary.
-
-Before enabling Bedrock, scheduled workflows, or other usage-based services, confirm permissions, quotas, expected request volume, and estimated costs. Do not provision potentially expensive resources without explicit approval.
+- **Storage and delivery.** The site bucket is private, with public access blocked and encryption on; CloudFront reaches it through Origin Access Control. Raw footage and rasters are not published.
+- **Public endpoints.** The three Function URLs for the frame check, brief and officer log are public because the browser calls them. CORS limits browsers to the app's origin and is not authentication. The real limits are server-side: 30 fresh frame checks and 20 fresh briefs per hour overall, cached results served free, and the passcode for officer-log writes. Request bodies, ids and allowed values are validated.
+- **IAM.** SageMaker, Step Functions and the scheduler each have their own role. The nine Lambdas share one role, scoped by resource ARN, with Bedrock invocation limited to Nova Lite and Nova Pro. A role per function is open work.
+- **Monitoring.** Lambda and endpoint logs keep 14 days. An error alarm covers each of the nine Lambdas, and a separate alarm watches Bedrock throttling.
+- **Cost.** A US$25 monthly budget alerts at 50%, 80% and 100%. Budget alerts do not stop usage. The SageMaker endpoint is the dominant cost (about US$0.74 an hour on-demand; check current pricing), so delete it when it is not needed; teardown steps are in [`docs/AWS_SUBMISSION.md`](docs/AWS_SUBMISSION.md).
+- **Reporting a problem.** See [`SECURITY.md`](SECURITY.md).
 
 ## Data provenance and licensing
 
@@ -491,6 +406,89 @@ Varshik combines source footage, elevation data, drainage geometries, analytical
 The KartaView frames used by the project are licensed under **CC BY-SA 4.0**, and required attribution must remain visible in the application. Raw footage under `data/kartaview/` and raster inputs under `data/geo/` are excluded from public deployment unless redistribution rights and an explicit data-handling review permit otherwise.
 
 A deployment should include only the assets required by the application and should preserve applicable licence and attribution requirements. The existence of a file in a development repository does not automatically grant permission to redistribute it.
+
+## AI used
+
+Five models, nothing else. Three run on SageMaker and read pictures; two run on Bedrock and write short text. The water model, drainage sizing and forecast interpolation are plain physics and arithmetic, not AI.
+
+| Model | Where it runs | What it does | Never does |
+|---|---|---|---|
+| SegFormer-B2 (Cityscapes fine-tuned) | SageMaker endpoint | Labels each pixel: road, footpath, kerb, vehicle | Measure anything on its own |
+| Depth Anything V2 (Small) | SageMaker endpoint | Relative depth from one image | Give calibrated elevation |
+| YOLOv8m-seg (pothole weights) | SageMaker endpoint | Finds and outlines potholes | Decide that a road floods |
+| Amazon Nova Lite (`us.amazon.nova-lite-v1:0`) | Bedrock | Reads a spot's dashcam frames for a visible drain inlet and blockage (frame check); writes the English officer brief | Change a number or a place name |
+| Amazon Nova Pro (`us.amazon.nova-pro-v1:0`) | Bedrock | Writes the Hindi officer brief | Change a number or a place name |
+
+Amazon Nova 2 Lite was compared while choosing a brief model and is not used; Nova Premier is no longer available.
+
+Guardrails on the two Bedrock models: the frame check is evidence for a person to verify and never feeds a score; a brief is rejected unless every number appears in the findings and every spot id is present; place names are added by code, not written by the model; fresh generations are rate-limited (30 and 20 per hour). Details are in "AI and event-driven capabilities".
+
+## Tests and verification
+
+### Automated (also run by CI on every push)
+
+| Suite | Count | What it covers |
+|---|---|---|
+| Backend (`backend/tests`, pytest) | 23 | Brief number check across Latin and Devanagari digits, unverified numbers detected, brief input trimmed of internal text, Kannada not offered, brief and frame-check rate limits, frame lookup on the real data layout, a missing cache key is not an error, the S3 pointer returned by `invoke-frame`, forecast interpolation and clamping, rejection of bad or path-like city, spot and language values, and `compare_observations.py` |
+| Infrastructure (`infra/test`, Jest) | 5 | Private encrypted bucket, Origin Access Control with HTTPS only, SPA routing by function with no error-page rewrites, cache lifetimes, `Project` tag |
+| Web app | build | `tsc -b` type-check and production build |
+| Dependencies | audit | `npm audit --omit=dev`: 0 vulnerabilities in `ui` and `infra` |
+| Secrets | scan | No AWS keys, passcodes or private keys in tracked files or git history; `.env.production` is git-ignored |
+
+### Live checks on the deployed account (12 October 2026)
+
+| Area | Check | Result |
+|---|---|---|
+| Web app | `/`, `/map`, `/report/delhi`, `/report/bengaluru` | All 200 |
+| Analysis data | 35 files across Delhi (1280p and 4K), Bengaluru ORR and Bellandur: analysis, flow lines, frames, overlays, depth, findings, layers, cached briefs and checks | All 200 |
+| SageMaker | Endpoint status; a real inference through `invoke-frame` | InService; returned a full frame record (ground, kerbs, depth, overlays) |
+| Pipeline | ORR (422 frames), Bellandur (133), Delhi 4K (207) through Step Functions and assemble | All produced `analysis.json` |
+| Failure handling | A run forced to fail | Step Functions shows `FAILED` (`PipelineFailed`) and the run record says `failed` |
+| Frame check | Fresh call on all 6 current spots (Delhi 2, Bengaluru 4) | 6 of 6 valid answers from Nova Lite; two frames checked by eye and the answers were reasonable |
+| Officer brief | Fresh English and Hindi for both cities | 4 of 4 passed verification (Nova Lite, Nova Pro) |
+| Forecast | Forced 100 mm/hr run | Delhi S1 14.0 cm, matching the depth curve; the test alert was removed. Schedule `cron(0 17 * * ? *)` Asia/Kolkata is enabled |
+| Public endpoints | Bad JSON, path-like city and spot, unknown spot, unsupported language, missing fields, missing city | All refused with 400 or 404 and no data read |
+| CORS | A request from another origin | Not allowed |
+| Officer log | Write with a wrong or placeholder passcode; read | 401; read returns 200 |
+| Storage | Public access on all three buckets | Blocked on all three |
+| IAM | The shared Lambda role | Scoped by resource ARN; no wildcard actions |
+| Data stores and messaging | DynamoDB tables, SNS subscription, EventBridge rule | Tables active; subscription confirmed; rule enabled |
+| Compute | All nine Lambdas, ECR images, CloudFront | Active, last update successful; images present; distribution deployed |
+| Monitoring | Log groups, alarms | 10 log groups at 14-day retention; 10 alarms (an error alarm per Lambda and one for Bedrock throttling) |
+
+### Not verified, and known gaps
+
+- **No automated browser test.** The dashboard, street view, walkthrough and the printable report were exercised by hand and through their data files, not by a test, and there are no front-end unit tests.
+- **No load test.** The rate limits are unit-tested but were not tried under concurrent load.
+- **Alert email delivery.** The SNS subscription is confirmed, but no test message was sent, so delivery has not been observed.
+- **Security headers.** CloudFront does not add HSTS, `X-Content-Type-Options` or a content security policy. Adding a response-headers policy to the CDK stack is open work.
+- **Brief language quality.** The Hindi brief checks numbers and ids, not fluency, and has not been reviewed by a fluent reader. Kannada was tried and removed.
+- **The scientific results are preliminary.** See "What the results do and do not show".
+- **The upload and run-status Function URLs return 403 and are not used by the app.** `get-upload-url` hands out presigned upload links, so it is left closed until it has authentication.
+
+## What the results do and do not show
+
+Measured by the scripts in this repository, on Delhi's 36 publicly reported waterlogging hotspots against 400 random main-road points (`backend/run_validate.py`). The numbers are weaker than a headline AUC suggests, and the weak ones are listed first.
+
+| Check | Result | What it means |
+|---|---|---|
+| Terrain alone (bare-earth height against surroundings) | AUC **0.57**, 95% CI 0.46 to 0.68 | The interval includes chance. Terrain by itself does not separate hotspots from ordinary roads here. |
+| Predicted 2-year-storm water depth, terrain and drains only, within 60 m | AUC **0.66**, 95% CI 0.60 to 0.72 | Modest but real. This is the figure used in the article. It uses the water model, not terrain alone. |
+| Stretch-level risk from the dashcam survey against the same hotspots | AUC **0.45**; 10 of 42 stretches within 300 m of a hotspot; top-5 precision 0.0 | The survey covers one 7.6 km route with only one reported hotspot nearby, so this test cannot confirm or refute the model. It did not support it. |
+| Bengaluru underpasses along 45 km, phone road profile against satellite elevation | AUC **0.69** against **0.47** | The one result where the phone sensor clearly adds signal. |
+
+Practical implications of how the system is built and run:
+
+- **Coverage is three surveys.** Delhi (ITO to Connaught Place), the Bengaluru ORR and Bellandur. Nothing here shows it generalises to another city or rainfall regime.
+- **Spot ids are not stable.** Spots are numbered by priority each time findings are rebuilt, so S1 can become a different place. Cached frame checks are keyed by city and spot id and go stale after a rebuild; regenerate them.
+- **The AI never feeds the numbers.** Bedrock output (frame checks, briefs) is shown as evidence for a person to verify. It does not change a depth, a score or a drainage figure. A brief is rejected unless every number in it appears in the findings and every spot id is present; place names are added by code.
+- **Hourly forecast, burst curves.** The daily alert applies Open-Meteo's hourly rain to depth curves built from 15-minute design storms, because no sourced conversion exists. Every alert says so. Treat it as a prompt to look, not a prediction.
+- **One GPU worker.** The endpoint is a single `ml.g4dn.xlarge`, so frames are analysed one at a time: roughly 6 to 10 seconds each, about 45 minutes for the 422-frame ORR survey. At about US$0.74 per hour on-demand (check current pricing) it costs around US$530 a month if left running; delete it when not in use.
+- **Check for the output, not just the status.** A failed pipeline run now ends in a Fail state, so Step Functions shows FAILED and the run record in `floodlens-runs` says `failed` (earlier runs ended cleanly and showed SUCCEEDED when they had failed). The result of a good run is `<sequence>-<size>/analysis.json`. Per-frame results are written to S3 (`frame-records/`) because a Map over a few hundred frames exceeds Step Functions' 256 KB state limit.
+- **Three public Function URLs.** Frame check, brief and officer log are open to the internet. CORS limits browsers, not other callers. The real limits are server-side: 30 fresh frame checks and 20 fresh briefs per hour overall, cached results served free, and writes to the officer log need a passcode. Anyone can use up the hourly quota; the effect is that new generations pause, not that cost runs away. Reading the officer log needs no passcode.
+- **Machine-written Hindi.** The briefs use Amazon Nova Pro and are checked for numbers and spot ids, not for fluency. Have a fluent reader review them before use.
+- **Officer reports are not measurements.** The log stores what an officer says happened. `backend/scripts/compare_observations.py` compares those reports with the 2-year-storm prediction, which is only meaningful on a day of heavy rain.
+- **Licences.** KartaView frames are CC BY-SA 4.0 and must stay attributed in the app. KSRSAC's Bengaluru drain map is public domain via OpenCity. FABDEM is distributed under non-commercial terms; confirm them before any commercial use.
 
 ## Limitations
 
@@ -520,35 +518,26 @@ Reliable evaluation requires verified field observations across representative l
 
 ## Roadmap
 
-The core delivery and event-driven workflows described in this README are implemented. Further work should focus on improving reliability, validation, and operational readiness:
+Open work, in the order it matters:
 
-1. **Hydrological validation:** compare estimated depth and hotspot rankings with verified observations across more locations and rainfall events.
-2. **Higher-resolution terrain:** evaluate finer elevation data and road-level surveys where available.
-3. **Identity and auditability:** replace shared-secret access with individual identities and role-based authorisation for operational use.
-4. **Forecast calibration:** validate city-specific rainfall conversions and depth curves against reliable historical or field data.
-5. **Observability:** refine dashboards, alarms, structured logs, and end-to-end service health checks.
-6. **AI/ML evaluation:** maintain a reviewed image set for Bedrock-assisted inspection; evaluate SageMaker prediction quality against reliable field observations; track model versions, latency, uncertainty, and failure cases.
-7. **Resilience and cost controls:** test retries, duplicate suppression, rate limits, cache invalidation, and budget alerts under failure conditions.
+1. **More validation.** Compare predicted depth and hotspot rankings with verified field observations across more locations and rain events. Today's evidence is three surveys and one set of reported Delhi hotspots.
+2. **Infrastructure as code for the rest.** Move SageMaker, Step Functions, the Lambdas, DynamoDB, SNS, EventBridge and IAM into CDK, and give each Lambda its own role.
+3. **Forecast calibration.** Replace the hourly-as-burst assumption with a sourced conversion for each city.
+4. **Review of the machine-written briefs.** Have a fluent reader check the Hindi before Kannada and other local languages are added.
+5. **Identity.** Replace the shared officer passcode with individual identities for any operational use.
+6. **Security headers.** Add a response-headers policy (HSTS, content-type options, a content security policy) to the CloudFront stack.
+7. **Cheaper inference.** The real-time endpoint cannot scale to zero; asynchronous inference or a run-on-demand endpoint would cut idle cost.
+8. **Kerb lines for the Bengaluru ORR.** The continuity script is currently written for the Delhi survey.
+
+### Future scope
+
+- **Reports in Kannada and other local languages.** Today the officer brief can be shown in English and Hindi, but the printable report itself is in English. Kannada was tried and removed because the machine translation was not good enough. Next is printing the whole report (findings, causes, fixes, the brief) in Kannada and other local languages, so a ward engineer can hand it to a team in the language they work in. The machine-written text must be reviewed by fluent readers first, and place names stay in English letters beside the local script so they can be cross-checked.
+- **Mapping every road with police vehicles.** The surveys so far are three routes. Police patrol vehicles already drive a city's roads every day, so a phone or dashcam on each one could supply the footage and sensor data the pipeline needs, and each stretch could be covered and refreshed within about a year. This is a plan, not something tested here. The measured rate is about 6.8 km of footage processed in 46 minutes on one GPU worker, so compute is not the limit; collecting footage is. It would also need agreements with the police and city, blurring of faces and number plates before footage is stored, and checks that phone-sensor road profiles hold up across devices and vehicles.
 
 ## Contributing
 
-Contributions should preserve the separation between data acquisition, analytical processing, structured outputs, and frontend presentation.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). In short: no invented numbers, AI output stays evidence and never feeds a number, and check for the output file, not just a green run.
 
-Before proposing a change:
+## Acknowledgements
 
-1. Identify the affected output schema or interface.
-2. Explain how the change handles missing or invalid data.
-3. Preserve data provenance and licence requirements.
-4. Avoid introducing public endpoints or cost-bearing cloud resources without review.
-5. Distinguish measured values from model-derived estimates and generated interpretations.
-6. Include reproducible validation steps for the affected workflow.
-
-## Acknowledgements and project context
-
-Varshik explores the intersection of geospatial analysis, cloud architecture, and AI-assisted decision support for urban infrastructure. The AWS implementation uses the AWS Registry of Open Data and Copernicus GLO-30 DEM as part of the geospatial workflow and connects the application delivery layer with serverless evidence inspection, forecasting, notifications, and field feedback.
-
-The project work was undertaken with an emphasis on explaining why each service belongs in the architecture, what responsibility it owns, and what controls are needed to use it responsibly.
-
----
-
-**Operational note:** Keep deployment identifiers, endpoints, model IDs, resource names, and setup commands aligned with the actual repository and AWS environment. Do not publish secret values, and verify service behaviour after infrastructure or model changes.
+Footage: KartaView contributors (CC BY-SA 4.0). Elevation: Copernicus GLO-30 through the AWS Registry of Open Data, and FABDEM. Bengaluru drains: KSRSAC 2022 via OpenCity (public domain). Rainfall forecasts: Open-Meteo. Models: SegFormer, Depth Anything V2, YOLOv8 and the Amazon Nova models.
