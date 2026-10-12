@@ -45,7 +45,20 @@ def _install_fake_boto3() -> None:
     sys.modules["boto3"] = fake
 
 
+def _install_fake_requests_if_missing() -> None:
+    """The forecast Lambda imports `requests`, which ships inside its deployment zip but is not a
+    test dependency. Tests never make a network call, so a stand-in is enough."""
+    try:
+        import requests  # noqa: F401
+    except ImportError:
+        fake = types.ModuleType("requests")
+        fake.RequestException = Exception
+        fake.get = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("network calls are not allowed in tests"))
+        sys.modules["requests"] = fake
+
+
 _install_fake_boto3()
+_install_fake_requests_if_missing()
 
 
 def load_handler(folder: str):
