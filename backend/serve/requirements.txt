@@ -1,4 +1,4 @@
 # Additions on top of ../requirements.txt, needed only to serve the model (not for run_local.py).
-flask>=3.0
+flask>=3.1.3
 gunicorn>=22.0
 boto3>=1.35
