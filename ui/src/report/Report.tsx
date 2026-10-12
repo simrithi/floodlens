@@ -5,6 +5,8 @@ import { loadAnalysis } from '../data/analysis'
 import type { Analysis } from '../data/analysis'
 import { CAUSE_SHORT, CONFIDENCE, PRIORITY, loadFindings, outputUrl } from '../data/findings'
 import type { Findings, Spot } from '../data/findings'
+import { FrameCheckResult, useCachedCheck } from '../dashboard/aws-panels'
+import { BriefSection } from './Brief'
 import { CapacityBars, ProfileChart } from '../dashboard/spots'
 import './report.css'
 
@@ -57,8 +59,9 @@ function OverviewMap({ tracks, spots }: { tracks: [number, number][][]; spots: S
   )
 }
 
-function SpotSection({ spot, index }: { spot: Spot; index: number }) {
+function SpotSection({ spot, index, city }: { spot: Spot; index: number; city: string }) {
   const p = PRIORITY[spot.priority]
+  const [check] = useCachedCheck(city, spot.id)
   return (
     <section className={'rep-spot' + (index > 0 ? ' break' : '')}>
       <header className="rep-spot-head" style={{ ['--c' as string]: p.color }}>
@@ -88,7 +91,7 @@ function SpotSection({ spot, index }: { spot: Spot; index: number }) {
         <div>
           <span>Confidence</span>
           <b>{CONFIDENCE[spot.confidence].replace(' confidence', '')}</b>
-          <small>{spot.evidence.filter((e) => e.kind !== 'catchment').length} independent signals</small>
+          <small>{(() => { const n = spot.evidence.filter((e) => e.kind !== 'catchment').length; return `${n} independent ${n === 1 ? 'signal' : 'signals'}` })()}</small>
         </div>
       </div>
 
@@ -128,6 +131,13 @@ function SpotSection({ spot, index }: { spot: Spot; index: number }) {
         </p>
       </div>
 
+      {check && (
+        <div className="rep-check">
+          <h3>What the dashcam shows</h3>
+          <FrameCheckResult check={check} />
+        </div>
+      )}
+
       {spot.reported && (
         <p className="rep-reported">
           <Megaphone size={14} weight="fill" /> Publicly reported waterlogged: {spot.reported.name}, {spot.reported.distanceM} m away.
@@ -152,7 +162,7 @@ export function Report({ city }: { city: string }) {
     loadFindings(city, ctrl.signal)
       .then(async (f) => {
         setFindings(f)
-        document.title = `FloodLens report: ${f.cityName}`
+        document.title = `Varshik report: ${f.cityName}`
         const analyses = await Promise.all(f.surveys.map((s) => loadAnalysis(s.sequence, 'lth', ctrl.signal).catch(() => null)))
         setTracks(
           analyses
@@ -202,7 +212,7 @@ export function Report({ city }: { city: string }) {
               <span className="rep-logo">
                 <Drop size={14} weight="fill" />
               </span>
-              FloodLens
+              Varshik
             </div>
             <span className="rep-kicker">Pre-monsoon waterlogging report</span>
             <h1>{findings.cityName}</h1>
@@ -275,8 +285,10 @@ export function Report({ city }: { city: string }) {
           </section>
 
           {findings.spots.map((s, i) => (
-            <SpotSection key={s.id} spot={s} index={i} />
+            <SpotSection key={s.id} spot={s} index={i} city={findings.city} />
           ))}
+
+          <BriefSection city={findings.city} />
 
           <section className="rep-method break">
             <h2>How these numbers are made</h2>
@@ -308,7 +320,7 @@ export function Report({ city }: { city: string }) {
             </p>
             <h3>Data and licences</h3>
             <p>
-              Drains: {findings.drainsSource ?? 'OpenStreetMap'}. Street imagery: KartaView ({findings.surveys.map((s) => s.attribution).join(', ')}), CC BY-SA 4.0. Elevation: FABDEM (University of
+              Drains: {findings.drainsSource ?? 'OpenStreetMap'}. Street imagery: {findings.surveys.map((s) => s.attribution).join(' ')} Elevation: FABDEM (University of
               Bristol, CC BY-NC-SA 4.0) and Copernicus DEM (AWS Registry of Open Data). Drains and roads: OpenStreetMap contributors (ODbL). Rain
               history: Open-Meteo (CC BY 4.0).
             </p>

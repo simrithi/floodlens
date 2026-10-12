@@ -1,32 +1,49 @@
-# React + TypeScript + Vite
+# ui: the Varshik web app
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19, TypeScript, Vite and MapLibre. It reads the pipeline's output over HTTP and renders it as a map, a spot list, street view and a printable report.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev      # http://localhost:5173, serves /analysis from ../data/outputs
+npm run build    # type-check and production build into dist/
+npm run lint     # oxlint
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Routes
+
+| Route | What it shows |
+|---|---|
+| `/` | Landing page |
+| `/map` | The dashboard: priority list, spot card, rain simulator, layers, street view, walkthrough |
+| `/report/<city>` | Printable findings report (`?print=1` opens the print dialog) |
+
+`?survey=delhi`, `?survey=blr-orr` or `?survey=blr-bellandur` opens a survey; `?tour=1` starts the walkthrough.
+
+## Configuration (build-time)
+
+| Variable | Purpose |
+|---|---|
+| `VITE_ANALYSIS_BASE` | Where the analysis files are served from (default `/analysis`) |
+| `VITE_API_FRAME_CHECK` | Frame-check Function URL. Without it the "Check frames with AI" button is hidden |
+| `VITE_API_BRIEF` | Officer-brief Function URL. Without it the brief tab only shows a cached brief |
+| `VITE_API_ACTIONS` | Officer-log Function URL. Without it the approve and report buttons are hidden |
+
+Set them in `.env.production` (git-ignored).
+
+## What it reads
+
+Under `ANALYSIS_BASE`: `findings-<city>.json`, `validation.json`, `route_profile.json`, `drains*.geojson`, `hollows*.json` and `.png`, `reported-<city>.json`, and per survey `<sequence>-<size>/` with `analysis.json`, `flow.geojson`, `kerb_lines.geojson` and the `frames/`, `overlays/` and `depth/` images. Cached AI results are read from `checks/<city>/<spot>.json`, `briefs/<city>-<lang>.json` and `alerts/<city>-<date>.json`. A missing optional file hides its layer; a missing `analysis.json` shows "No pipeline output yet".
+
+## Where things are
+
+| Path | Contents |
+|---|---|
+| `src/dashboard/` | Dashboard, spot card (`spots.tsx`), AI blocks (`aws-panels.tsx`), details, layers |
+| `src/map/` | MapLibre stage and layers |
+| `src/report/` | Printable report and the officer brief tab |
+| `src/streetview/` | Dashcam frame viewer with the model overlays |
+| `src/data/` | Loaders and types for each file above, and `aws.ts` for the Function URLs |
+| `src/state.tsx` | App state: survey, rain, selection, findings, alert |
+| `DESIGN.md` | Visual design notes |

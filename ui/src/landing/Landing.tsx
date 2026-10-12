@@ -44,7 +44,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
           See where your city floods <span>before it rains.</span>
         </motion.h1>
         <motion.p className="landing-sub" variants={item}>
-          FloodLens reads dashcam footage, satellite elevation and rain history to map every road that will flood.
+          Varshik reads dashcam footage, satellite elevation and rain history to map every road that will flood.
         </motion.p>
         <motion.div variants={item}>
           <motion.button

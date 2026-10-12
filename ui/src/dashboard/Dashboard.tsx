@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import type { Variants } from 'motion/react'
 import { useState } from 'react'
-import { CloudRain, FilePdf, Path, PlayCircle, Sparkle, Target, Wrench } from '@phosphor-icons/react'
+import { Bell, CloudRain, FilePdf, Path, PlayCircle, Sparkle, Target, Wrench } from '@phosphor-icons/react'
 import { Logo } from '../ui/Logo'
 import { SurveyPicker } from './SurveyPicker'
 import { Tour } from '../tour/Tour'
@@ -33,7 +33,7 @@ const panel = (dir: 'left' | 'right' | 'up' | 'down', order: number): Variants =
 }
 
 export function Dashboard({ onHome }: { onHome: () => void }) {
-  const { rain, setRain, selectedId, setSelectedId, analysis, analysisStatus, survey, run, setRun, validation, setShowValidation, findings } = useAppState()
+  const { rain, setRain, selectedId, setSelectedId, analysis, analysisStatus, survey, run, setRun, validation, setShowValidation, findings, alert } = useAppState()
   const hotspot = useSelectedHotspot()
   const cell = useSelectedCell()
   // Walkthrough for the demo video; ?tour=1 starts it on load.
@@ -57,6 +57,12 @@ export function Dashboard({ onHome }: { onHome: () => void }) {
             Walkthrough
           </button>
           <LayerPanel />
+          {alert && alert.spots.length > 0 && (
+            <button className="btn alert-chip" onClick={() => setRain(Math.round(Math.max(...alert.spots.map((s) => s.forecastRainMmHr))))} title={alert.spots.map((s) => `${s.spotId} ${s.name}: ${s.expectedDepthCm} cm expected, ${s.action}`).join('; ')}>
+              <Bell size={16} weight="fill" />
+              Tomorrow: {alert.spots.length} {alert.spots.length === 1 ? 'spot' : 'spots'}
+            </button>
+          )}
           {validation && survey.validation && (
             <button className="btn accuracy-btn" onClick={() => setShowValidation(true)}>
               <Target size={16} />
@@ -177,6 +183,11 @@ export function Dashboard({ onHome }: { onHome: () => void }) {
               {p.label}
             </button>
           ))}
+          {alert && alert.spots.length > 0 && (
+            <button className="preset" onClick={() => setRain(Math.round(Math.max(...alert.spots.map((s) => s.forecastRainMmHr))))}>
+              Tomorrow
+            </button>
+          )}
         </div>
       </motion.footer>
 

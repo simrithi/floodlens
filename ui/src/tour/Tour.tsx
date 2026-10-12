@@ -133,7 +133,7 @@ export function Tour({ onExit }: { onExit: () => void }) {
         },
       },
       {
-        caption: 'FloodLens: find these spots before the monsoon, from footage cities already have.',
+        caption: 'Varshik: find these spots before the monsoon, from footage cities already have.',
         detail: 'A screening tool for officials: check the flagged spots, clear the drains, plan the fixes.',
         ms: 7000,
         run: () => setStreetView(null),

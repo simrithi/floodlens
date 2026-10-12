@@ -162,7 +162,7 @@ const REPORTED_NEAR_M = 250
 
 /** A measured ~60 m road stretch from the dashcam pipeline (real values). */
 export function CellDetail({ cell }: { cell: CellRecord }) {
-  const { analysis, run, setStreetView, rain, reported, setSelectedId, findings } = useAppState()
+  const { analysis, run, setStreetView, rain, reported, setSelectedId, findings, alert } = useAppState()
   // While the panel animates out after a survey switch it still holds the old stretch but already sees the
   // new survey's analysis: render nothing rather than mixing the two.
   if (!analysis || !analysis.cells.some((c) => c.id === cell.id)) return null
@@ -227,7 +227,7 @@ export function CellDetail({ cell }: { cell: CellRecord }) {
         </button>
       )}
 
-      {spot && <FixCard spot={spot} waterM={depthAt((analysis.cells.find((c) => c.id === spot.worstCell) ?? cell).water, rain) / 100} />}
+      {spot && <FixCard spot={spot} city={findings?.city} action={alert?.spots.find((a) => a.spotId === spot.id)?.action} waterM={depthAt((analysis.cells.find((c) => c.id === spot.worstCell) ?? cell).water, rain) / 100} />}
 
       <div className="water-card">
         <div className="water-gauge" aria-hidden="true">

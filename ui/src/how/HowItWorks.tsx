@@ -117,7 +117,7 @@ export function HowItWorks({ onClose }: { onClose: () => void }) {
           <div>
             <span className="label mono">How it works</span>
             <h2 id="how-title">From a dashcam drive to a sized fix</h2>
-            <p>FloodLens finds the roads that will flood before the monsoon, explains why, and tells officials how much drainage each one needs.</p>
+            <p>Varshik finds the roads that will flood before the monsoon, explains why, and tells officials how much drainage each one needs.</p>
           </div>
           <button className="how-close" onClick={onClose} aria-label="Close">
             <X size={18} />

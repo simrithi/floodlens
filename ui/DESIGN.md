@@ -1,7 +1,7 @@
 ---
 version: alpha
-name: FloodLens
-description: "Dark 'flood control room' dashboard. Based on the Linear design system (reference/awesome-design-md/design-md/linear.app/DESIGN.md): near-black canvas, four-step charcoal surface ladder, hairline borders, Inter type with negative tracking on display sizes. Changes for FloodLens: the single UI accent is water blue (#4c9aff) instead of Linear lavender, and a dedicated 5-step risk scale is reserved for data (map, overlays, charts) only."
+name: Varshik
+description: "Dark 'flood control room' dashboard. Based on the Linear design system (reference/awesome-design-md/design-md/linear.app/DESIGN.md): near-black canvas, four-step charcoal surface ladder, hairline borders, Inter type with negative tracking on display sizes. Changes for Varshik: the single UI accent is water blue (#4c9aff) instead of Linear lavender, and a dedicated 5-step risk scale is reserved for data (map, overlays, charts) only."
 
 colors:
   primary: "#4c9aff"
@@ -48,7 +48,7 @@ spacing: { xxs: 4px, xs: 8px, sm: 12px, md: 16px, lg: 24px, xl: 32px, xxl: 48px 
 
 ## Overview
 
-FloodLens is a data product: the map and the dashcam frames are the protagonists, the chrome is a quiet dark frame around them (Linear's "product screenshot is the hero" rule, applied to a live app).
+Varshik is a data product: the map and the dashcam frames are the protagonists, the chrome is a quiet dark frame around them (Linear's "product screenshot is the hero" rule, applied to a live app).
 
 ## Rules
 

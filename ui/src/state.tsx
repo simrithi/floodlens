@@ -9,6 +9,8 @@ import { initialLayers, saveLayers } from './data/layers'
 import { SURVEYS, surveyById } from './data/surveys'
 import { loadFindings } from './data/findings'
 import type { Findings } from './data/findings'
+import { loadAlert } from './data/aws'
+import type { Alert } from './data/aws'
 import type { Survey, SurveyId } from './data/surveys'
 import type { LayerId, LayerState } from './data/layers'
 
@@ -40,6 +42,8 @@ type AppState = {
   reported: ReportedSpot[]
   /** Spots, causes and sized fixes for the current survey's city (null until loaded or not built). */
   findings: Findings | null
+  /** Tomorrow's forecast alert for the current city (null when there is none). */
+  alert: Alert | null
   showValidation: boolean
   setShowValidation: (v: boolean) => void
   /** Which map layers are switched on (dashboard only; remembered in this browser). */
@@ -81,6 +85,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     loadFindings(survey.city, ctrl.signal)
       .then(setFindings)
       .catch(() => !ctrl.signal.aborted && setFindings(null))
+    return () => ctrl.abort()
+  }, [survey.city])
+  const [alert, setAlert] = useState<Alert | null>(null)
+  useEffect(() => {
+    const ctrl = new AbortController()
+    setAlert(null)
+    loadAlert(survey.city, ctrl.signal)
+      .then(setAlert)
+      .catch(() => {})
     return () => ctrl.abort()
   }, [survey.city])
   const [layers, setLayers] = useState<LayerState>(initialLayers)
@@ -135,7 +148,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       })
       .catch((e) => {
         if (ctrl.signal.aborted) return
-        console.warn('FloodLens: no pipeline output, using sample data only.', e)
+        console.warn('Varshik: no pipeline output, using sample data only.', e)
         setAnalysis(null)
         setAnalysisStatus('missing')
       })
@@ -145,9 +158,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       rain, setRain, selectedId, setSelectedId, survey, setSurvey, run, setRun, analysis, analysisStatus, streetView, setStreetView,
-      validation, reported, findings, showValidation, setShowValidation, layers, setLayer,
+      validation, reported, findings, alert, showValidation, setShowValidation, layers, setLayer,
     }),
-    [rain, selectedId, survey, setSurvey, run, analysis, analysisStatus, streetView, validation, reported, findings, showValidation, layers, setLayer],
+    [rain, selectedId, survey, setSurvey, run, analysis, analysisStatus, streetView, validation, reported, findings, alert, showValidation, layers, setLayer],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

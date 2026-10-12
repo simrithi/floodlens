@@ -6,6 +6,7 @@ import { CAUSE_SHORT, CONFIDENCE, PRIORITY } from '../data/findings'
 import type { Findings, Spot } from '../data/findings'
 import { SURVEYS } from '../data/surveys'
 import { useAppState } from '../state'
+import { ActionsBlock, FrameCheckBlock } from './aws-panels'
 
 const ease = [0.16, 1, 0.3, 1] as const
 
@@ -161,7 +162,7 @@ export function CapacityBars({ spot }: { spot: Spot }) {
 }
 
 /** Right panel: why this spot floods and what fixes it. */
-export function FixCard({ spot, waterM }: { spot: Spot; waterM: number }) {
+export function FixCard({ spot, waterM, city, action }: { spot: Spot; waterM: number; city?: string; action?: string }) {
   return (
     <motion.section className="fix-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }}>
       <header className="fix-head">
@@ -203,6 +204,8 @@ export function FixCard({ spot, waterM }: { spot: Spot; waterM: number }) {
           <CheckCircle size={14} weight="fill" /> {spot.now}
         </p>
       </div>
+      {city && <FrameCheckBlock city={city} spotId={spot.id} />}
+      {city && <ActionsBlock city={city} spotId={spot.id} action={action} />}
       {spot.directions.length > 1 && (
         <p className="fix-foot">
           <ArrowRight size={12} /> Seen on {spot.directions.length} passes: {spot.directions.join('; ')}

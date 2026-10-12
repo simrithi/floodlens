@@ -88,7 +88,7 @@ export function ValidationPanel() {
       >
         <header className="val-head">
           <div>
-            <h2 id="val-title">How accurate is FloodLens?</h2>
+            <h2 id="val-title">How accurate is Varshik?</h2>
             <p>Checked against {v.reference.count} publicly reported Delhi waterlogging hotspots.</p>
           </div>
           <button className="sv-close" onClick={close} aria-label="Close">

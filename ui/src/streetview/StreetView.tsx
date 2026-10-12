@@ -328,7 +328,7 @@ export function StreetView() {
               <a href={analysis.sequence.url} target="_blank" rel="noreferrer">
                 KartaView
               </a>
-              , {analysis.sequence.attribution}, {analysis.sequence.license}. Overlays by FloodLens, same licence. Single-camera estimates.
+              , {analysis.sequence.attribution}, {analysis.sequence.license}. Overlays by Varshik, same licence. Single-camera estimates.
             </p>
           </aside>
         </div>

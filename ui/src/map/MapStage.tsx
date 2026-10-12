@@ -521,7 +521,7 @@ export function MapStage({ mode, reducedMotion, onHotspotClick }: Props) {
         )
         setHollowsReady(true)
       })
-      .catch(() => !ctrl.signal.aborted && console.warn(`FloodLens: ${survey.hollows} layer not available`))
+      .catch(() => !ctrl.signal.aborted && console.warn(`Varshik: ${survey.hollows} layer not available`))
     return () => ctrl.abort()
   }, [survey, loaded])
 

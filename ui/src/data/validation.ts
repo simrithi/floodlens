@@ -1,4 +1,4 @@
-// Output of backend/run_validate.py: FloodLens checked against publicly reported Delhi waterlogging hotspots.
+// Output of backend/run_validate.py: Varshik checked against publicly reported Delhi waterlogging hotspots.
 
 import type { FeatureCollection, Point } from 'geojson'
 import { ANALYSIS_BASE } from './analysis'

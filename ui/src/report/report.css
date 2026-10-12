@@ -440,3 +440,36 @@
     print-color-adjust: exact;
   }
 }
+
+.rep-brief,
+.rep-check {
+  margin-top: 18px;
+}
+.brief-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.brief-text {
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+.report .ai-check dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  font-size: 13px;
+}
+.report .ai-check dl > div {
+  display: contents;
+}
+.report .ai-check dd {
+  margin: 0;
+  text-align: right;
+  text-transform: capitalize;
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
