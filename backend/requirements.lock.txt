@@ -72,6 +72,6 @@ typer==0.27.3
 typing-extensions==4.16.0
 tzdata==2026.5
 ultralytics==8.4.174
-ultralytics-platform==0.1.82
+ultralytics-platform==0.1.83
 ultralytics-thop==2.2.2
 urllib3==2.8.0
