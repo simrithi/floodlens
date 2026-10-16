@@ -31,7 +31,14 @@ for b in floodlens-raw-$ACCOUNT floodlens-outputs-$ACCOUNT floodlensweb-sitebuck
 done
 
 # --- the models on SageMaker
-check "SageMaker endpoint" InService "$(aws sagemaker describe-endpoint --endpoint-name floodlens-analyze --region $R --query EndpointStatus --output text)" "floodlens-analyze (ml.g4dn.xlarge)"
+ep=$(aws sagemaker describe-endpoint --endpoint-name floodlens-analyze --region $R --query EndpointStatus --output text 2>/dev/null)
+if [ "$ep" = "InService" ]; then
+  pass "SageMaker endpoint" "floodlens-analyze (ml.g4dn.xlarge)"
+elif [ -z "$ep" ] && aws sagemaker describe-endpoint-config --endpoint-config-name floodlens-analyze-config --region $R >/dev/null 2>&1; then
+  printf 'INFO  %-28s %s\n' "SageMaker endpoint" "stopped to save cost; config and model are kept. Recreate: aws sagemaker create-endpoint --endpoint-name floodlens-analyze --endpoint-config-name floodlens-analyze-config --region $R"
+else
+  fail "SageMaker endpoint" "status '${ep:-missing}' and no saved config to recreate it from"
+fi
 
 # --- orchestration
 check "Step Functions" ACTIVE "$(aws stepfunctions describe-state-machine --state-machine-arn arn:aws:states:$R:$ACCOUNT:stateMachine:floodlens-pipeline --region $R --query status --output text)" "floodlens-pipeline"

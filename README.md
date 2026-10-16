@@ -14,6 +14,8 @@
 
 **[Live demo](https://d24wvc44c3vaxz.cloudfront.net/)** · **[Demo video](https://youtu.be/nPr0dBLUtUk)** · **[Blog post](https://builder.aws.com/content/3KYn3Kwff6ZOhYY2RbAhKFBszHr/varshik)** · **[Architecture](docs/architecture.md)** · **[What I learned](docs/LEARNINGS.md)** · **[AWS notes](docs/AWS_SUBMISSION.md)**
 
+> **Cost and current state (17 October 2026).** The SageMaker GPU endpoint was first started on 9 October and ran until it was deleted on 16 October 2026 (final deletion at 23:56 IST) to stop idle cost. Hosting it cost about US$17.66 a day: **US$112.89 for SageMaker in October** and **US$117.92 for all services including US$2.73 tax**, before a **US$100 credit**, leaving about **US$17.92** (AWS Cost Explorer on 17 October; the final bill may differ). Everything else costs about US$2.30 so far this month. The analysed surveys, camera frames, AI checks, briefs, alerts and the live site do not use the endpoint, so they work as before. Only processing new footage needs it, and one command recreates it (see [`docs/PROOF.md`](docs/PROOF.md)). `bash infra/verify_aws.sh` reports the stopped endpoint as informational and still passes.
+
 Three deep-learning models (SegFormer-B2, Depth Anything V2, YOLOv8m-seg) run on one Amazon SageMaker GPU endpoint. Their output is fused with smartphone road-height profiles, Copernicus GLO-30 / FABDEM terrain and a water-balance model to estimate standing-water depth under 2-, 5- and 10-year storms, for Delhi and Bengaluru.
 
 Varshik started from a personal place: growing up in Tamil Nadu, the author saw what floods do to families and lost friends to them. The question behind the project is simple: what if we could see which roads will flood *before* it rains?
@@ -263,6 +265,8 @@ CDK defines one stack, `FloodLensWeb`: the site bucket, the CloudFront distribut
 
 ## Amazon SageMaker inference
 
+> *Note (16 October 2026): the SageMaker endpoint was deleted after submission to avoid idle cost (about US$0.74 an hour). The model, the endpoint configuration and the container image are kept, and one command recreates it in about 10 minutes. The checks recorded here were made on 12 October while it was running.*
+
 Varshik runs its computer-vision analysis on **Amazon SageMaker** through a single **real-time endpoint** (`floodlens-analyze`, one production variant on `ml.g4dn.xlarge`, one instance). The serving container ([backend/serve/](backend/serve/)) loads three deep-learning models and runs them on each dashcam frame:
 
 | Model | Task | Role |
@@ -447,7 +451,7 @@ Guardrails on the two Bedrock models: the frame check is evidence for a person t
 |---|---|---|
 | Web app | `/`, `/map`, `/report/delhi`, `/report/bengaluru` | All 200 |
 | Analysis data | 35 files across Delhi (1280p and 4K), Bengaluru ORR and Bellandur: analysis, flow lines, frames, overlays, depth, findings, layers, cached briefs and checks | All 200 |
-| SageMaker | Endpoint status; a real inference through `invoke-frame` | InService; returned a full frame record (ground, kerbs, depth, overlays) |
+| SageMaker | Endpoint status; a real inference through `invoke-frame` | InService; returned a full frame record (ground, kerbs, depth, overlays) (checked 12 October; stopped on 16 October, see the note below) |
 | Pipeline | ORR (422 frames), Bellandur (133), Delhi 4K (207) through Step Functions and assemble | All produced `analysis.json` |
 | Failure handling | A run forced to fail | Step Functions shows `FAILED` (`PipelineFailed`) and the run record says `failed` |
 | Frame check | Fresh call on all 6 current spots (Delhi 2, Bengaluru 4) | 6 of 6 valid answers from Nova Lite; two frames checked by eye and the answers were reasonable |
@@ -500,6 +504,8 @@ Run `bash infra/verify_aws.sh` with access to the account. It is read-only and c
 | Systems Manager | Officer passcode stored as a SecureString; wrong passcodes refused (401) |
 | S3 and CloudFront | 3 private buckets; distribution deployed; app routes and 42 analysis files return 200 |
 | ECR, CloudWatch, Budgets | Images present; 10 alarms (none firing), 14-day logs; US$25 budget |
+
+> *Note (16 October 2026): the SageMaker endpoint was deleted after submission to avoid idle cost (about US$0.74 an hour). The model, the endpoint configuration and the container image are kept, and one command recreates it in about 10 minutes. The checks recorded here were made on 12 October while it was running. To recreate it: `aws sagemaker create-endpoint --endpoint-name floodlens-analyze --endpoint-config-name floodlens-analyze-config --region us-east-1`*
 
 ### The SNS email, as received
 

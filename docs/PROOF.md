@@ -2,6 +2,12 @@
 
 Everything is deployed in `us-east-1`. This page records evidence, and a script anyone with access to the account can re-run to check it again. The account number is replaced by `<account>`.
 
+> *Note (16 October 2026): the SageMaker endpoint was deleted after submission to avoid idle cost (about US$0.74 an hour). The model, the endpoint configuration and the container image are kept, and one command recreates it in about 10 minutes. The checks recorded here were made on 12 October while it was running.*
+>
+> ```bash
+> aws sagemaker create-endpoint --endpoint-name floodlens-analyze --endpoint-config-name floodlens-analyze-config --region us-east-1
+> ```
+
 ## 1. Re-run the checks yourself
 
 ```bash
@@ -84,7 +90,7 @@ Not yet observed: the daily flood-alert email itself (the forecast Lambda's mess
 
 | Service | Live evidence |
 |---|---|
-| Amazon SageMaker | Endpoint `floodlens-analyze` is InService on `ml.g4dn.xlarge`. A real inference through the `invoke-frame` Lambda returned a full frame record (road regions, relative depth, kerbs, overlay and depth images) |
+| Amazon SageMaker | Endpoint `floodlens-analyze` is InService on `ml.g4dn.xlarge`. A real inference through the `invoke-frame` Lambda returned a full frame record (road regions, relative depth, kerbs, overlay and depth images) (stopped on 16 October to save cost; see the note at the top) |
 | AWS Step Functions | `floodlens-pipeline` is active. It processed the Bengaluru ORR survey (422 frames), Bellandur (133) and Delhi at 4K (207). A forced failure ends `FAILED` |
 | AWS Lambda | All nine functions are Active with a successful last update; three have public Function URLs |
 | Amazon Bedrock | Fresh frame checks on all 6 current spots returned valid answers from Nova Lite; fresh English and Hindi briefs for both cities passed verification (Nova Lite and Nova Pro) |

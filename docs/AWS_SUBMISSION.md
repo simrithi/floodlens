@@ -43,6 +43,8 @@ Record the SNS email only after the subscription has been confirmed (see below).
 | Lambda, DynamoDB, SNS, EventBridge, Step Functions | cents at demo volume | all within or near free tier |
 | S3, CloudFront | cents | small data volume |
 
+**Measured (AWS Cost Explorer, 17 October 2026).** The endpoint ran from 9 to 16 October at about US$17.66 a full day: US$112.89 for SageMaker, US$117.92 for all services including US$2.73 tax, before a US$100 credit, so about US$17.92 net. Everything except the endpoint came to about US$2.30. The endpoint was deleted on 16 October to stop the charge; the model, configuration and image are kept (see [`PROOF.md`](PROOF.md) for the recreate command).
+
 The endpoint is the only large cost. Delete it when judging is over, or leave it running only if the analysis must be re-run.
 
 ## Limits on public cost
