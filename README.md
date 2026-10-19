@@ -4,6 +4,8 @@
 
 **Flood-risk analysis that finds the roads likely to hold water before the rain arrives, and shows engineers why.**
 
+**🌐 Live demo: [https://d24wvc44c3vaxz.cloudfront.net/](https://d24wvc44c3vaxz.cloudfront.net/)**
+
 [![Python](https://img.shields.io/badge/python-3.12-3776ab)](backend/requirements.txt)
 [![React](https://img.shields.io/badge/React-19-61dafb)](ui/package.json)
 [![Built on AWS](https://img.shields.io/badge/built%20on-AWS-ff9900)](#aws-architecture)
@@ -14,7 +16,7 @@
 
 **[Live demo](https://d24wvc44c3vaxz.cloudfront.net/)** · **[Demo video](https://youtu.be/nPr0dBLUtUk)** · **[Blog post](https://builder.aws.com/content/3KYn3Kwff6ZOhYY2RbAhKFBszHr/varshik)** · **[Architecture](docs/architecture.md)** · **[What I learned](docs/LEARNINGS.md)** · **[AWS notes](docs/AWS_SUBMISSION.md)**
 
-> **Cost and current state (17 October 2026).** The SageMaker GPU endpoint was first started on 9 October and ran until it was deleted on 16 October 2026 (final deletion at 23:56 IST) to stop idle cost. Hosting it cost about US$17.66 a day: **US$112.89 for SageMaker in October** and **US$117.92 for all services including US$2.73 tax**, before a **US$100 credit**, leaving about **US$17.92** (AWS Cost Explorer on 17 October; the final bill may differ). Everything else costs about US$2.30 so far this month. The analysed surveys, camera frames, AI checks, briefs, alerts and the live site do not use the endpoint, so they work as before. Only processing new footage needs it, and one command recreates it (see [`docs/PROOF.md`](docs/PROOF.md)). `bash infra/verify_aws.sh` reports the stopped endpoint as informational and still passes.
+> **Cost and current state (updated 17 October 2026).** The SageMaker GPU endpoint was first started on 9 October and ran until it was deleted on 16 October 2026 (final deletion at 23:56 IST) to stop idle cost. Hosting it cost about US$17.66 a day: **US$121.99 for SageMaker in October** and **US$129.04 for all services including US$4.43 tax**, before a **US$100 credit**, leaving about **US$29.04** (AWS Cost Explorer on 17 October; the final bill may differ). Everything else costs about US$2.60 so far this month. The analysed surveys, camera frames, AI checks, briefs, alerts and the live site do not use the endpoint, so they work as before. Only processing new footage needs it, and one command recreates it (see [`docs/PROOF.md`](docs/PROOF.md)). `bash infra/verify_aws.sh` reports the stopped endpoint as informational and still passes.
 
 Three deep-learning models (SegFormer-B2, Depth Anything V2, YOLOv8m-seg) run on one Amazon SageMaker GPU endpoint. Their output is fused with smartphone road-height profiles, Copernicus GLO-30 / FABDEM terrain and a water-balance model to estimate standing-water depth under 2-, 5- and 10-year storms, for Delhi and Bengaluru.
 
