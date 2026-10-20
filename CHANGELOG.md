@@ -5,6 +5,8 @@ All notable changes. Dates are when the change landed.
 ## Unreleased
 
 ### Changed
+- Added 24 unit tests for the numerical core (`backend/tests/test_core.py`): distances, camera geometry, AUC and bootstrap interval, and water-balance depths, each with a hand-worked expected value. CI now installs numpy, scipy and rasterio for them.
+- Stopped tracking two build zips that were already in `.gitignore`.
 - The SageMaker endpoint was deleted on 16 October to avoid idle cost (about US$0.74 an hour; US$121.99 for SageMaker in October before a US$100 credit). The model, endpoint configuration and container image are kept, and one command recreates it. `infra/verify_aws.sh` now reports a stopped endpoint as informational.
 
 ## 0.1.0 (2026-10-12) - AWS hackathon submission

@@ -39,7 +39,7 @@ The AI frame check, brief and officer log need AWS Function URLs, so they are hi
 Everything else:
 
 ```bash
-cd backend && python -m pytest tests            # 23 tests, no AWS needed
+cd backend && python -m pytest tests            # 47 tests, no AWS needed (needs numpy, scipy, rasterio)
 cd infra && npm install && npm test              # 5 template tests
 cd backend && python run_validate.py             # Delhi hotspot validation (needs data/)
 cd backend && python run_local.py --rescore      # recompute risk from an analysis.json (needs data/, no GPU)
@@ -441,7 +441,7 @@ Guardrails on the two Bedrock models: the frame check is evidence for a person t
 
 | Suite | Count | What it covers |
 |---|---|---|
-| Backend (`backend/tests`, pytest) | 23 | Brief number check across Latin and Devanagari digits, unverified numbers detected, brief input trimmed of internal text, Kannada not offered, brief and frame-check rate limits, frame lookup on the real data layout, a missing cache key is not an error, the S3 pointer returned by `invoke-frame`, forecast interpolation and clamping, rejection of bad or path-like city, spot and language values, and `compare_observations.py` |
+| Backend (`backend/tests`, pytest) | 47 | Brief number check across Latin and Devanagari digits, unverified numbers detected, brief input trimmed of internal text, Kannada not offered, brief and frame-check rate limits, frame lookup on the real data layout, a missing cache key is not an error, the S3 pointer returned by `invoke-frame`, forecast interpolation and clamping, rejection of bad or path-like city, spot and language values, and `compare_observations.py`; and the numerical core (distances and offsets, camera geometry, AUC and bootstrap interval, water-balance depths with hand-worked expected values) |
 | Infrastructure (`infra/test`, Jest) | 5 | Private encrypted bucket, Origin Access Control with HTTPS only, SPA routing by function with no error-page rewrites, cache lifetimes, `Project` tag |
 | Web app | build | `tsc -b` type-check and production build |
 | Dependencies | audit | `npm audit --omit=dev`: 0 vulnerabilities in `ui` and `infra` |
